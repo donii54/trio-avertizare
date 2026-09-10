@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<style id="embed-mode">
+html.embed header,
+html.embed a[href*="login"],
+html.embed a[href*="/admin"],
+html.embed #overlay,
+html.embed #open-popup-btn { display: none !important; }
+html.embed #download-map-btn.is-visible { display: inline-flex !important; }
+html.embed, html.embed body { height: 100% !important; overflow: hidden !important; }
+html.embed .page {
+  height: 100% !important; min-height: 0 !important;
+  display: flex !important; flex-direction: column !important;
+  padding: 0 !important;
+}
+html.embed .widget {
+  flex: 1 1 auto !important; min-height: 0 !important;
+  display: flex !important; flex-direction: column !important;
+  overflow: hidden !important; border-radius: 0 !important;
+  padding: 10px 12px 12px !important;
+}
+html.embed .dashboard { flex: 1 1 auto !important; min-height: 0 !important; }
+html.embed .widget > h2 { font-size: 16px !important; margin-bottom: 8px !important; }
+</style>
+<script>
+if (location.search.indexOf("embed=1") !== -1) document.documentElement.classList.add("embed");
+</script>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avertizări Meteorologice — Moldova</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Tailwind must load before tailwind.config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: { preflight: false },
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#EEF4FB', 100: '#D7E6F6', 200: '#B7D2EE', 600: '#1E4B8E', 700: '#163A6E', 900: '#0F2749' },
+            code:  { yellow: '#FFED00', orange: '#FF8A00', red: '#FF0000', green: '#28D762' }
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          borderRadius: { widget: '16px' }
+        }
+      }
+    };
+  </script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: Inter, system-ui, sans-serif; }
+    .page    { height: 100vh; display: flex; flex-direction: column; }
+    .widget  { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .dashboard { flex: 1; min-height: 0; position: relative; }
+    .map-wrap, #map, #map.leaflet-container { width: 100%; height: 100%; min-height: 0; background: transparent; }
+    #map { cursor: pointer; }
+    .leaflet-container { background: transparent !important; }
+    .district-label {
+      background: transparent !important; border: none !important; box-shadow: none !important;
+      font-family: Inter, system-ui, sans-serif; font-size: 11px; font-weight: 700;
+      color: #14532d;
+      text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+      pointer-events: none;
+    }
+    .legend-dot {
+      width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+      border: 1px solid rgba(15,23,42,0.15); box-shadow: 0 0 0 2px rgba(255,255,255,0.7);
+    }
+    .info-panel article:focus, .info-panel article:focus-visible { outline: none; }
+    .popup-map { align-self: flex-start; }
+    .popup-map img { display: block; width: 100%; height: auto; border-radius: 12px; }
+    header h1 { font-size: clamp(22px, 5vw, 40px) !important; }
+    .widget > h2 { font-size: clamp(16px, 2.4vw, 22px) !important; }
+
+    #download-map-btn,
+    .download-map-btn {
+      border: 1px solid #7BA3D4 !important;
+      box-shadow: 0 0 0 1px rgba(30, 75, 142, 0.12), 0 4px 12px rgba(30, 75, 142, 0.18) !important;
+      outline: none !important;
+    }
+    #download-map-btn:hover,
+    .download-map-btn:hover {
+      border-color: #1E4B8E !important;
+      box-shadow: 0 0 0 1px rgba(30, 75, 142, 0.22), 0 6px 16px rgba(30, 75, 142, 0.28) !important;
+    }
+    #download-map-btn:focus-visible,
+    .download-map-btn:focus-visible {
+      border-color: #1E4B8E !important;
+      box-shadow: 0 0 0 3px rgba(123, 163, 212, 0.45) !important;
+    }
+
+    /* Soft branded scrollbar (phenomena panel + popup) */
+    #phenomena-panel,
+    #popup-list,
+    .info-panel {
+      scrollbar-width: thin;
+      scrollbar-color: #8bb0d9 transparent;
+    }
+    #phenomena-panel::-webkit-scrollbar,
+    #popup-list::-webkit-scrollbar,
+    .info-panel::-webkit-scrollbar {
+      width: 12px;
+    }
+    #phenomena-panel::-webkit-scrollbar-track,
+    #popup-list::-webkit-scrollbar-track,
+    .info-panel::-webkit-scrollbar-track {
+      background: rgba(30, 75, 142, 0.06);
+      border-radius: 999px;
+      margin: 4px 0;
+    }
+    #phenomena-panel::-webkit-scrollbar-thumb,
+    #popup-list::-webkit-scrollbar-thumb,
+    .info-panel::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #7BA3D4 0%, #1E4B8E 100%);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+      min-height: 40px;
+    }
+    #phenomena-panel::-webkit-scrollbar-thumb:hover,
+    #popup-list::-webkit-scrollbar-thumb:hover,
+    .info-panel::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #1E4B8E 0%, #163A6E 100%);
+      border: 3px solid transparent;
+      background-clip: padding-box;
+    }
+    #phenomena-panel::-webkit-scrollbar-button:single-button,
+    #popup-list::-webkit-scrollbar-button:single-button,
+    .info-panel::-webkit-scrollbar-button:single-button {
+      display: block;
+      height: 16px;
+      background-color: #EEF4FB;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 11px 11px;
+      border-radius: 6px;
+      border: 1px solid rgba(30, 75, 142, 0.12);
+    }
+    #phenomena-panel::-webkit-scrollbar-button:single-button:vertical:decrement,
+    #popup-list::-webkit-scrollbar-button:single-button:vertical:decrement,
+    .info-panel::-webkit-scrollbar-button:single-button:vertical:decrement {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 10.5 8 6.5l4 4' stroke='%231E4B8E' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    #phenomena-panel::-webkit-scrollbar-button:single-button:vertical:increment,
+    #popup-list::-webkit-scrollbar-button:single-button:vertical:increment,
+    .info-panel::-webkit-scrollbar-button:single-button:vertical:increment {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 5.5 8 9.5l4-4' stroke='%231E4B8E' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    #phenomena-panel::-webkit-scrollbar-button:single-button:vertical:decrement:hover,
+    #popup-list::-webkit-scrollbar-button:single-button:vertical:decrement:hover,
+    .info-panel::-webkit-scrollbar-button:single-button:vertical:decrement:hover,
+    #phenomena-panel::-webkit-scrollbar-button:single-button:vertical:increment:hover,
+    #popup-list::-webkit-scrollbar-button:single-button:vertical:increment:hover,
+    .info-panel::-webkit-scrollbar-button:single-button:vertical:increment:hover {
+      background-color: #D7E6F6;
+      border-color: rgba(30, 75, 142, 0.28);
+    }
+    #phenomena-panel::-webkit-scrollbar-button:vertical:start:increment,
+    #phenomena-panel::-webkit-scrollbar-button:vertical:end:decrement,
+    #popup-list::-webkit-scrollbar-button:vertical:start:increment,
+    #popup-list::-webkit-scrollbar-button:vertical:end:decrement,
+    .info-panel::-webkit-scrollbar-button:vertical:start:increment,
+    .info-panel::-webkit-scrollbar-button:vertical:end:decrement {
+      display: none;
+    }
+
+    @media (max-width: 1100px) {
+      .info-panel { width: 340px !important; }
+    }
+
+    @media (max-width: 900px) {
+      html:not(.embed), html:not(.embed) body { overflow: auto; height: auto; }
+      html:not(.embed) .page,
+      html:not(.embed) .widget,
+      html:not(.embed) .dashboard { height: auto; min-height: 0; display: flex; flex-direction: column; }
+      html:not(.embed) .page { padding: 12px 12px 20px !important; }
+      html:not(.embed) .widget { padding: 12px !important; }
+      html:not(.embed) .map-wrap,
+      html:not(.embed) #map { height: 52vh; min-height: 280px; width: 100%; }
+
+      .dashboard { display: flex; flex-direction: column; }
+      .map-wrap, #map { width: 100%; }
+      .info-panel {
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        padding-left: 0 !important;
+        margin-top: 12px;
+        max-height: none;
+      }
+      .info-panel > div:first-child {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .info-panel ul {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 16px !important;
+        width: 100%;
+      }
+      html.embed .dashboard { display: flex !important; flex-direction: column !important; height: 100% !important; }
+      html.embed .map-wrap { flex: 1 1 56% !important; min-height: 180px !important; height: auto !important; }
+      html.embed #map, html.embed #map.leaflet-container { height: 100% !important; min-height: 0 !important; }
+      html.embed .info-panel {
+        flex: 0 1 44% !important;
+        max-height: 44% !important;
+        overflow: auto !important;
+        margin-top: 8px !important;
+      }
+      .alert-content { flex-direction: column; }
+      .popup-map { width: 100% !important; min-height: 200px; }
+      .district-label { font-size: 9px !important; }
+      #overlay { padding: 8px !important; }
+      #overlay > div { max-height: 96vh !important; }
+    }
+
+    @media (max-width: 640px) {
+      html:not(.embed) .map-wrap,
+      html:not(.embed) #map { height: 46vh; min-height: 240px; }
+      .info-panel ul { font-size: 13px !important; }
+      .legend-dot { width: 12px; height: 12px; }
+      .district-label { font-size: 8px !important; }
+      #open-popup-btn { width: 100%; }
+    }
+
+    @media (max-width: 420px) {
+      html:not(.embed) .map-wrap,
+      html:not(.embed) #map { min-height: 200px; height: 42vh; }
+      .info-panel ul { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body class="bg-[#F4F6F8] text-slate-800">
+
+  <!-- ── Main page ─────────────────────────────────────────────────────── -->
+  <main class="page px-6 py-5 lg:px-8">
+    <header class="mb-4 shrink-0">
+      <nav class="mb-2 flex items-center justify-between gap-2 text-[13px] font-medium text-slate-400">
+        <span class="flex items-center gap-2">
+          <span>Acasă</span><span>›</span>
+          <span class="text-brand-600">Avertizări Meteorologice</span>
+        </span>
+        <span class="flex items-center gap-3"><a href="/home" class="text-brand-600 hover:underline">Acasă</a><a href="/login" class="text-brand-600 hover:underline">Administrare</a></span>
+      </nav>
+      <h1 class="text-[40px] font-extrabold leading-none tracking-[0.04em] text-brand-600">PROGNOZE</h1>
+    </header>
+
+    <section class="widget overflow-hidden rounded-widget bg-[#E4F0F8] px-6 pb-6 pt-5">
+      <h2 class="mb-3 shrink-0 text-[22px] font-extrabold tracking-[0.06em] text-brand-600">AVERTIZĂRI METEOROLOGICE</h2>
+      <div class="dashboard">
+        <div class="map-wrap"><div id="map"></div></div>
+        <aside class="info-panel absolute right-0 top-0 z-[500] flex h-full w-[420px] flex-col pl-4">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <ul class="flex flex-col gap-3 text-[15px] font-medium text-brand-600">
+              <li class="flex items-center gap-3"><span class="legend-dot" style="background:#28D762"></span> scăzut</li>
+              <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FFED00"></span> mediu</li>
+              <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FF8A00"></span> ridicat</li>
+              <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FF0000"></span> foarte mare</li>
+            </ul>
+            <button id="open-popup-btn" type="button"
+              class="shrink-0 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-brand-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-50"
+              onclick="openPopup()">Deschide popup</button>
+            <button id="download-map-btn" type="button"
+              class="download-map-btn hidden shrink-0 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
+              onclick="downloadTransparentMap()">Descarcă harta</button>
+          </div>
+          <div id="phenomena-panel" class="min-h-0 flex-1 overflow-y-auto pr-1"></div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <!-- ── Popup overlay ─────────────────────────────────────────────────── -->
+  <div id="overlay" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-slate-900/60 p-4" onclick="closePopup(event)">
+    <div class="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-white px-6 py-4">
+        <svg class="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="#FFED00" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 3.2 2.4 20.4h19.2L12 3.2z"/>
+          <path d="M12 9.2v5.4" stroke="#111827" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="12" cy="16.8" r="1" fill="#111827"/>
+        </svg>
+        <span class="flex-1 text-base font-extrabold tracking-wide text-red-600 uppercase">Avertizare Meteorologică</span>
+        <button class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-lg leading-none text-slate-700 hover:bg-slate-200"
+                onclick="closePopup()" aria-label="Închide">×</button>
+      </div>
+      <div class="min-h-0 flex-1 overflow-y-auto" id="popup-list"></div>
+      <div class="shrink-0 border-t border-slate-100 bg-slate-50 px-6 py-3">
+        <div class="flex flex-wrap gap-x-5 gap-y-1 text-xs font-bold text-slate-600">
+          <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FF0000"></span>COD ROȘU</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FF8A00"></span>COD PORTOCALIU</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FFED00;border:1px solid #d4a900"></span>COD GALBEN</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#28D762"></span>FĂRĂ COD</span>
+        </div>
+        <p class="mt-1.5 text-[11px] italic text-slate-400">Notă: Informația are caracter informativ. În cazul pericolului iminent se vor emite avertizări actualizate.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scripts (model → controller) ─────────────────────────────────── -->
+  <script src="/js/district-codes.js"></script>
+  <script src="/js/models/warnings.js?v=20260908scroll"></script>
+  <script src="/js/controllers/public-map.js?v=20260908scroll"></script>
+</body>
+</html>

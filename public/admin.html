@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>Avertizări Meteorologice — Administrare</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- Tailwind must load before tailwind.config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false } };</script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <!-- ── Admin list ─────────────────────────────────────────────────────── -->
+  <section id="list-view" style="display:block">
+    <div class="admin-header">
+      <h1>Avertizări Meteorologice</h1>
+      <button class="logout-btn" onclick="handleLogout()">Ieșire</button>
+    </div>
+
+    <div class="list" id="saved-list">
+      <div class="empty">Nu există avertismente deocamdată</div>
+    </div>
+
+    <button class="btn btn-create" onclick="showEditor()">Adaugă avertizare</button>
+    <button class="clear-btn" onclick="clearAllWarnings()">Șterge totul</button>
+  </section>
+
+  <!-- ── Warning editor ────────────────────────────────────────────────── -->
+  <section id="editor-view">
+    <div id="map"></div>
+
+    <div class="panel">
+      <div>
+        <button class="btn-back" onclick="showList()">← Înapoi</button>
+        <h1>AVERTIZARE</h1>
+      </div>
+
+      <div class="field">
+        <label>Data emiterii</label>
+        <input type="hidden" id="emitDate" required>
+        <button type="button" id="emitDate-trigger" class="date-trigger group" onclick="openCalendar('emitDate')">
+          <span class="date-trigger-icon-wrap">
+            <svg class="date-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+              <path d="M3 9h18M8 3v4M16 3v4"></path>
+            </svg>
+          </span>
+          <span id="emitDate-label" class="date-trigger-label">Alege data și ora</span>
+          <svg class="date-trigger-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="field">
+        <label>Fenomene</label>
+        <select id="phenomenon" required>
+          <option value="">Alege fenomenul</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Intervalul de acțiune</label>
+        <div class="interval-fields">
+          <div>
+            <label for="intervalFrom-trigger">De la</label>
+            <input type="hidden" id="intervalFrom" required>
+            <button type="button" id="intervalFrom-trigger" class="date-trigger group" onclick="openCalendar('intervalFrom')">
+              <span class="date-trigger-icon-wrap">
+                <svg class="date-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                  <path d="M3 9h18M8 3v4M16 3v4"></path>
+                </svg>
+              </span>
+              <span id="intervalFrom-label" class="date-trigger-label">Alege data și ora</span>
+              <svg class="date-trigger-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+          <div>
+            <label for="intervalTo-trigger">Până la</label>
+            <input type="hidden" id="intervalTo" required>
+            <button type="button" id="intervalTo-trigger" class="date-trigger group" onclick="openCalendar('intervalTo')">
+              <span class="date-trigger-icon-wrap">
+                <svg class="date-trigger-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                  <path d="M3 9h18M8 3v4M16 3v4"></path>
+                </svg>
+              </span>
+              <span id="intervalTo-label" class="date-trigger-label">Alege data și ora</span>
+              <svg class="date-trigger-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="color-label">Culoare pentru umplerea raioanelor</label>
+        <div class="colors">
+          <div class="color-btn green"  data-color="#28D762" title="Normă — resetează culoarea"></div>
+          <div class="color-btn yellow active" data-color="#FFED00"></div>
+          <div class="color-btn orange" data-color="#FF8A00"></div>
+          <div class="color-btn red"    data-color="#FF0000"></div>
+        </div>
+        <button type="button" class="btn-paint-all" onclick="paintAllDistricts()">Colorează toată harta</button>
+        <div class="paint-hint">Dublu-click pentru a colora un raion. Shift + click pentru mai multe raioane.</div>
+      </div>
+
+      <div id="codes-container"></div>
+      <button class="btn-add" onclick="addCodeBlock()">Adaugă cod</button>
+
+      <div class="btn-row">
+        <button class="btn btn-send" id="send-btn" onclick="sendToServer()" disabled>Trimite pe server</button>
+        <button class="btn btn-reset" onclick="resetMapColors()">Resetează</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Warning detail popup ──────────────────────────────────────────── -->
+  <div class="overlay" id="overlay" onclick="closeAdminPopup(event)">
+    <div class="popup" onclick="event.stopPropagation()">
+      <div class="popup-header">
+        <h2>⚠️ AVERTIZĂRI METEOROLOGICE</h2>
+        <button class="close-btn" onclick="closeAdminPopup()">×</button>
+      </div>
+      <div class="popup-body">
+        <div class="popup-map">
+          <img id="popup-img" src="" alt="Harta">
+        </div>
+        <div class="popup-info">
+          <h3>AVERTIZARE</h3>
+          <div class="info-row"><span class="label">Data emiterii:</span>      <span class="value" id="p-date"></span></div>
+          <div class="info-row"><span class="label">Fenomene:</span>           <span class="value" id="p-phenomenon"></span></div>
+          <div class="info-row"><span class="label">Intervalul de acțiune:</span> <span class="value" id="p-interval"></span></div>
+          <div id="p-codes"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Calendar popover ──────────────────────────────────────────────── -->
+  <div id="calendar-popover"
+       class="hidden fixed z-[200] w-[300px] overflow-hidden rounded-2xl bg-white"
+       style="border:1px solid #7BA3D4; box-shadow:0 0 0 1px rgba(30,75,142,0.12), 0 18px 40px rgba(30,75,142,0.22);">
+    <div style="background:linear-gradient(135deg,#1E4B8E,#163A6E); padding:12px; color:#fff;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <button type="button" onclick="shiftCalendarMonth(-1)" aria-label="Luna anterioară"
+                style="width:28px;height:28px;border:1px solid rgba(123,163,212,0.7);border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;font-size:18px;line-height:1;cursor:pointer;">‹</button>
+        <div id="calendar-title" style="font-size:14px;font-weight:600;letter-spacing:0.02em;"></div>
+        <button type="button" onclick="shiftCalendarMonth(1)" aria-label="Luna următoare"
+                style="width:28px;height:28px;border:1px solid rgba(123,163,212,0.7);border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;font-size:18px;line-height:1;cursor:pointer;">›</button>
+      </div>
+      <div style="border-radius:8px;background:rgba(255,255,255,0.12);padding:6px 10px;">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:rgba(219,234,254,0.85);">Selectat</div>
+        <div id="calendar-selected-label" style="margin-top:2px;font-size:13px;font-weight:600;color:#fff;">—</div>
+      </div>
+    </div>
+
+    <div style="padding:8px 12px 12px;">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:#94a3b8;">
+        <span>Lu</span><span>Ma</span><span>Mi</span><span>Jo</span><span>Vi</span><span>Sâ</span><span>Du</span>
+      </div>
+      <div id="calendar-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
+
+      <div style="margin-top:10px;border:1px solid #7BA3D4;border-radius:12px;background:#EEF4FB;padding:10px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#1E4B8E;">Ora</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <select id="cal-hour"
+                  style="flex:1;min-width:0;height:36px;border:1px solid #7BA3D4;border-radius:10px;background:#fff;padding:0 8px;font-size:14px;font-weight:600;color:#0f2749;outline:none;"></select>
+          <span style="font-size:16px;font-weight:700;color:#7BA3D4;">:</span>
+          <select id="cal-minute"
+                  style="flex:1;min-width:0;height:36px;border:1px solid #7BA3D4;border-radius:10px;background:#fff;padding:0 8px;font-size:14px;font-weight:600;color:#0f2749;outline:none;"></select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        <button type="button" onclick="setCalendarToday()"
+                style="flex:1;border:1px solid #7BA3D4;border-radius:12px;background:#fff;color:#1E4B8E;padding:8px 12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 0 0 1px rgba(30,75,142,0.08);">Astăzi</button>
+        <button type="button" onclick="closeCalendar(true)"
+                style="flex:1;border:1px solid #7BA3D4;border-radius:12px;background:#1E4B8E;color:#fff;padding:8px 12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 0 0 1px rgba(30,75,142,0.12),0 4px 12px rgba(30,75,142,0.22);">Gata</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Scripts (MVC load order: model → view → controller) ──────────── -->
+  <script src="/js/district-codes.js"></script>
+  <script src="/js/models/warnings.js"></script>
+  <script src="/js/models/auth.js"></script>
+  <script src="/js/views/calendar-view.js?v=20260908ok"></script>
+  <script src="/js/views/admin-view.js"></script>
+  <script src="/js/controllers/admin.js?v=20260908ok"></script>
+</body>
+</html>

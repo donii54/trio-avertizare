@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autentificare — Administrare</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <!-- Tailwind must load before tailwind.config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { corePlugins: { preflight: false } };</script>
+</head>
+<body>
+  <section id="login-view" class="active">
+    <form class="login-card" id="login-form">
+      <h1>Administrare</h1>
+      <p>Avertizări Meteorologice</p>
+      <label>
+        Login
+        <input type="text" id="login-user" autocomplete="username" required>
+      </label>
+      <label>
+        Parolă
+        <input type="password" id="login-pass" autocomplete="current-password" required>
+      </label>
+      <div id="login-error" class="login-error"></div>
+      <button type="submit" class="btn login-submit">Intră</button>
+    </form>
+  </section>
+
+  <script>
+    const EDITOR_URL = '/admin';
+
+    // Already authenticated → open the admin list
+    (async () => {
+      try {
+        const res = await fetch('/api/me');
+        if (res.ok && (await res.json()).ok) window.location.replace(EDITOR_URL);
+      } catch {}
+    })();
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const user     = document.getElementById('login-user').value.trim();
+      const password = document.getElementById('login-pass').value;
+      const error    = document.getElementById('login-error');
+      error.textContent = '';
+
+      try {
+        const res  = await fetch('/api/login', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ user, password }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          window.location.href = EDITOR_URL;
+        } else {
+          error.textContent = data.error || 'Login sau parolă incorectă';
+        }
+      } catch {
+        error.textContent = 'Eroare de conexiune';
+      }
+    });
+  </script>
+</body>
+</html>

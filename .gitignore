@@ -1,0 +1,21 @@
+/vendor/
+/node_modules/
+/.env.backup
+/.env.production
+/storage/*.key
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*.log
+/storage/pail/
+/bootstrap/cache/config.php
+/bootstrap/cache/routes*.php
+/public/hot
+/public/storage
+/public/fonts-manifest.dev.json
+test-results/
+playwright-report/
+.phpunit.result.cache
+
+# .env and database.sqlite are intentionally tracked for redeploy.
+# Secrets in .env are placeholders (CHANGE_ME) — set real values on the server.

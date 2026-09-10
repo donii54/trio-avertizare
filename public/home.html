@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avertizare AMM — Acasă</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --panel: #e4f0f8;
+      --brand: #1e4b8e;
+      --brand-dark: #163a6e;
+      --text: #0f2749;
+      --muted: #64748b;
+      --line: #d7e6f6;
+      --green: #28d762;
+      --yellow: #ffed00;
+      --orange: #ff8a00;
+      --red: #ff0000;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: Inter, system-ui, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #d7e6f6 0%, transparent 55%),
+        radial-gradient(900px 420px at 100% 0%, #cfe7f7 0%, transparent 50%),
+        var(--bg);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 48px; }
+    header { margin-bottom: 28px; }
+    .crumb { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+    .crumb a { color: var(--brand); text-decoration: none; font-weight: 600; }
+    .crumb a:hover { text-decoration: underline; }
+    h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 800; letter-spacing: 0.04em; color: var(--brand); }
+    .lead { margin-top: 8px; max-width: 620px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+
+    .tabs {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin: 22px 0 18px; padding: 6px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      backdrop-filter: blur(6px);
+    }
+    .tab {
+      border: 0; background: transparent; cursor: pointer;
+      padding: 10px 14px; border-radius: 10px;
+      font: 600 14px Inter, system-ui, sans-serif;
+      color: var(--muted);
+    }
+    .tab:hover { background: #eef4fb; color: var(--brand); }
+    .tab.is-active { background: var(--brand); color: #fff; }
+
+    .panel { display: none; }
+    .panel.is-active { display: block; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      display: flex; flex-direction: column; gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 8px 24px rgba(15, 39, 73, 0.06);
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      min-height: 160px;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #b7d2ee;
+      box-shadow: 0 14px 30px rgba(15, 39, 73, 0.1);
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      width: fit-content;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--brand);
+      font-size: 12px; font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .card h2 { font-size: 20px; font-weight: 800; color: var(--brand-dark); }
+    .card p { color: var(--muted); font-size: 14px; line-height: 1.45; flex: 1; }
+    .card .go { margin-top: auto; font-size: 13px; font-weight: 700; color: var(--brand); }
+
+    .preview {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      min-height: 420px;
+    }
+    .preview iframe { width: 100%; height: 520px; border: 0; display: block; background: transparent; }
+    #panel-preview-map .preview iframe { background: #fff; }
+    .preview-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+      padding: 12px 14px; border-bottom: 1px solid var(--line); background: #fff;
+    }
+    .preview-bar strong { color: var(--brand); font-size: 14px; }
+    .preview-bar a {
+      font-size: 13px; font-weight: 700; color: var(--brand);
+      text-decoration: none;
+    }
+    .preview-bar a:hover { text-decoration: underline; }
+
+    .codes {
+      display: flex; flex-wrap: wrap; gap: 10px 16px;
+      margin-top: 18px; color: var(--muted); font-size: 13px; font-weight: 600;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(15,23,42,.15); }
+    .note { margin-top: 16px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    code {
+      background: #eef4fb; color: var(--brand-dark);
+      padding: 2px 6px; border-radius: 6px; font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="crumb">
+        <span>Avertizare AMM</span>
+        <a href="/login">Administrare</a>
+      </div>
+      <h1>ACASĂ</h1>
+      <p class="lead">Alege pagina: hartă publică, widget pentru meteo.md sau administrare. Poți și previzualiza mai jos fără să părăsești această pagină.</p>
+    </header>
+
+    <div class="tabs" role="tablist">
+      <button class="tab is-active" type="button" data-tab="pages" role="tab">Pagini</button>
+      <button class="tab" type="button" data-tab="preview-map" role="tab">Previzualizare hartă</button>
+      <button class="tab" type="button" data-tab="preview-widget" role="tab">Previzualizare widget</button>
+      <button class="tab" type="button" data-tab="links" role="tab">Link-uri utile</button>
+    </div>
+
+    <section class="panel is-active" id="panel-pages">
+      <div class="grid">
+        <a class="card" href="/">
+          <span class="badge">Public</span>
+          <h2>Hartă completă</h2>
+          <p>Pagina principală cu harta Moldovei, legendă și lista avertizărilor. Aceasta este harta din meniul Avertizări.</p>
+          <span class="go">Deschide →</span>
+        </a>
+        <a class="card" href="/widget.html">
+          <span class="badge">Widget</span>
+          <h2>Doar harta</h2>
+          <p>Pagină minimală doar cu harta — pentru iframe pe pagina principală meteo.md.</p>
+          <span class="go">Deschide →</span>
+        </a>
+        <a class="card" href="/?embed=1">
+          <span class="badge">Embed</span>
+          <h2>Hartă embed</h2>
+          <p>Versiunea pentru iframe pe pagina Avertizări meteorologice (fără header și login).</p>
+          <span class="go">Deschide →</span>
+        </a>
+        <a class="card" href="/admin">
+          <span class="badge">Admin</span>
+          <h2>Administrare</h2>
+          <p>Creare / ștergere avertizări, colorare raioane, intervale de timp. Necesită autentificare.</p>
+          <span class="go">Deschide →</span>
+        </a>
+      </div>
+      <div class="codes">
+        <span><i class="dot" style="background:var(--green)"></i> scăzut</span>
+        <span><i class="dot" style="background:var(--yellow)"></i> mediu</span>
+        <span><i class="dot" style="background:var(--orange)"></i> ridicat</span>
+        <span><i class="dot" style="background:var(--red)"></i> foarte mare</span>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-preview-map">
+      <div class="preview">
+        <div class="preview-bar">
+          <strong>Hartă completă</strong>
+          <a href="/" target="_blank" rel="noopener">Deschide în tab nou</a>
+        </div>
+        <iframe src="/?embed=1" title="Previzualizare harta completa"></iframe>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-preview-widget">
+      <div class="preview">
+        <div class="preview-bar">
+          <strong>Widget — doar harta</strong>
+          <a href="/widget.html" target="_blank" rel="noopener">Deschide în tab nou</a>
+        </div>
+        <iframe src="/widget.html" title="Previzualizare widget" style="height:360px;background:transparent;" allowtransparency="true"></iframe>
+      </div>
+      <p class="note">Pentru meteo.md folosește: <code>https://avertizare.31.131.24.146.sslip.io/widget.html</code> — iframe cu <code>style="background:transparent;border:0"</code></p>
+    </section>
+
+    <section class="panel" id="panel-links">
+      <div class="grid">
+        <a class="card" href="/api/warnings" target="_blank" rel="noopener">
+          <span class="badge">API</span>
+          <h2>/api/warnings</h2>
+          <p>JSON cu avertizările active. Folosit de meteo.md și de harta publică.</p>
+          <span class="go">Deschide JSON →</span>
+        </a>
+        <a class="card" href="/login">
+          <span class="badge">Auth</span>
+          <h2>Login</h2>
+          <p>Autentificare administrator înainte de editorul de avertizări.</p>
+          <span class="go">Deschide →</span>
+        </a>
+        <a class="card" href="https://www.meteo.md/" target="_blank" rel="noopener">
+          <span class="badge">Site</span>
+          <h2>meteo.md</h2>
+          <p>Site-ul principal AMM unde se montează popup-ul și widget-ul.</p>
+          <span class="go">Deschide →</span>
+        </a>
+        <a class="card" href="/home">
+          <span class="badge">Acasă</span>
+          <h2>Reîncarcă portalul</h2>
+          <p>Această pagină de navigare între toate ecranele Avertizare AMM.</p>
+          <span class="go">Refresh →</span>
+        </a>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const tabs = document.querySelectorAll('.tab');
+    const panels = {
+      pages: document.getElementById('panel-pages'),
+      'preview-map': document.getElementById('panel-preview-map'),
+      'preview-widget': document.getElementById('panel-preview-widget'),
+      links: document.getElementById('panel-links'),
+    };
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('is-active'));
+        tab.classList.add('is-active');
+        Object.values(panels).forEach(p => p.classList.remove('is-active'));
+        panels[tab.dataset.tab].classList.add('is-active');
+      });
+    });
+  </script>
+</body>
+</html>
