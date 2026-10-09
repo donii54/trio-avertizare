@@ -10,6 +10,7 @@ class Warning extends Model
     public const TZ = 'Europe/Chisinau';
 
     protected $fillable = [
+        'kind',
         'phenomenon',
         'emit_date',
         'interval_from',
@@ -67,6 +68,7 @@ class Warning extends Model
 
         return [
             'id'           => (string) $this->id,
+            'kind'         => $this->kind ?: 'meteo',
             'phenomenon'   => $this->phenomenon,
             'emitDate'     => $emit?->toIso8601String(),
             'intervalFrom' => $from?->toIso8601String(),

@@ -9,7 +9,9 @@ const POPUP_DISMISSED_KEY     = 'moldova_warnings_popup_dismissed';
 const POPUP_INSTANCE_ID       = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 const IS_MAP_WIDGET           = document.documentElement.classList.contains('map-widget');
 const IS_EMBED                = document.documentElement.classList.contains('embed');
-const WIDGET_DEFAULT_REDIRECT = 'https://www.meteo.md/index.php/ro/weather/current-warnings';
+const WIDGET_DEFAULT_REDIRECT = warningKind() === 'env'
+  ? 'https://www.meteo.md/index.php/ro/environmental/current-warnings'
+  : 'https://www.meteo.md/index.php/ro/weather/current-warnings';
 
 function widgetRedirectUrl() {
   try {
@@ -80,7 +82,7 @@ function warningCardHtml(item, index, isSelected) {
   return `
     <article class="mb-3 cursor-pointer rounded-xl border p-4 outline-none transition hover:border-brand-200 hover:bg-white ${cls}"
              data-warning="${index}" onclick="selectWarning(${index})">
-      <h3 class="text-base font-bold text-brand-700">${escapeHtmlPublic(item.phenomenon||'Avertizare meteorologică')}</h3>
+      <h3 class="text-base font-bold text-brand-700">${escapeHtmlPublic(item.phenomenon||(warningKind()==='env'?'Avertizare de mediu':'Avertizare meteorologică'))}</h3>
       <p class="mt-1 text-[11px] text-slate-500">${escapeHtmlPublic(formatInterval(item)||formatDateTime(item.emitDate))}</p>
       ${codesHtml(item.codes)}
     </article>`;
@@ -324,23 +326,76 @@ function restoreLayer(layer) {
   }
 }
 
-function applyMapColors(data) {
-  if (!publicGeojsonLayer) return;
+function stationColors(data) {
   const source = selectedWarningIndex == null
-    ? data.map((w, i) => ({ warning: w, index: i }))
+    ? data.map((warning, index) => ({ warning, index }))
     : data[selectedWarningIndex] ? [{ warning: data[selectedWarningIndex], index: selectedWarningIndex }] : [];
-
   const result = {};
   source.forEach(({ warning, index }) => {
-    (warning.districts || []).forEach(d => {
-      [d.name, d.label].filter(Boolean).forEach(key => {
-        if (!result[key] || colorRank(d.color) > colorRank(result[key].color)) {
-          result[key] = { color: d.color, warningIndex: index };
+    (warning.districts || []).forEach(station => {
+      [station.name, station.label].filter(Boolean).forEach(key => {
+        if (!result[key] || colorRank(station.color) > colorRank(result[key].color)) {
+          result[key] = { color: station.color, warningIndex: index };
         }
       });
     });
   });
-  districtWarnings = result;
+  return result;
+}
+
+const envPublicMarkers = {};
+
+function envPublicRadius() {
+  if (IS_MAP_WIDGET) return 14;
+  const mapEl = document.getElementById('map');
+  const shortSide = Math.min(
+    mapEl && mapEl.clientWidth ? mapEl.clientWidth : window.innerWidth,
+    mapEl && mapEl.clientHeight ? mapEl.clientHeight : window.innerHeight
+  );
+  if (shortSide < 700) return 14;
+  return 30;
+}
+
+function resizeEnvPublicCircles() {
+  const radius = envPublicRadius();
+  const weight = radius > 22 ? 5 : 4;
+  Object.values(envPublicMarkers).forEach(marker => marker.setStyle({ radius, weight }));
+}
+
+function applyEnvCircleColors(data) {
+  const colors = stationColors(data);
+  const radius = envPublicRadius();
+  Object.entries(envPublicMarkers).forEach(([id, marker]) => {
+    const match = colors[id];
+    marker.setStyle(envMarkerOptions(match?.color || '', radius));
+    marker._warningIndex = match ? match.warningIndex : null;
+  });
+  renderPhenomenaPanel(data);
+  renderPopupToggleButton(data.length);
+  updateDownloadMapButton(data.length);
+}
+
+function addEnvPublicMarkers() {
+  Object.entries(ENV_STATIONS).forEach(([id, station]) => {
+    const marker = L.circleMarker([station.lat, station.lng], Object.assign({ pane: 'markerPane' }, envMarkerOptions('', envPublicRadius()))).addTo(publicMap);
+    marker.bindTooltip(station.label, {
+      permanent: false, direction: 'top', offset: [0, -8], className: 'district-label',
+    });
+    marker.on('click', () => {
+      if (IS_MAP_WIDGET) { goFromWidget(); return; }
+      if (marker._warningIndex != null) selectWarning(marker._warningIndex);
+    });
+    envPublicMarkers[id] = marker;
+  });
+}
+
+function applyMapColors(data) {
+  if (warningKind() === 'env') {
+    applyEnvCircleColors(data);
+    return;
+  }
+  if (!publicGeojsonLayer) return;
+  districtWarnings = stationColors(data);
   publicGeojsonLayer.eachLayer(restoreLayer);
   renderPhenomenaPanel(data);
 }
@@ -366,11 +421,15 @@ function initPublicMap() {
   fetch('/data/MD_MAP.geojson')
     .then(r => r.json())
     .then(geo => {
+      const envMap = warningKind() === 'env';
+      if (envMap) addEnvCountryOutline(publicMap, geo);
       publicGeojsonLayer = L.geoJSON(geo, {
-        style: { color: '#ffffff', weight: 1.3, fillColor: PUBLIC_MAP_NORMAL_COLOR, fillOpacity: 0.9 },
+        style: envMap
+          ? { color: ENV_LAND_FILL, weight: 3, fillColor: ENV_LAND_FILL, fillOpacity: 1 }
+          : { color: '#ffffff', weight: 1.3, fillColor: PUBLIC_MAP_NORMAL_COLOR, fillOpacity: 0.9 },
         onEachFeature: (feature, layer) => {
           const fullName = feature.properties.shapeName || feature.properties.NAME || feature.properties.name || '???';
-          const label    = districtLabel(fullName);
+          const label    = envMap ? envPlaceName(fullName) : districtLabel(fullName);
           layer.feature.properties._label = label;
           if (!IS_MAP_WIDGET) {
             layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label' });
@@ -378,7 +437,7 @@ function initPublicMap() {
 
           layer.on({
             mouseover: e => {
-              if (IS_MAP_WIDGET) return;
+              if (IS_MAP_WIDGET || warningKind() === 'env') return;
               e.target.setStyle({ weight: 3, color: '#0f172a', fillOpacity: 0.98 });
               e.target.bringToFront();
             },
@@ -430,9 +489,21 @@ function initPublicMap() {
       requestAnimationFrame(fitMap);
       setTimeout(fitMap, 50);
       setTimeout(fitMap, 250);
-      window.addEventListener('resize', fitMap);
-      if (window.ResizeObserver) new ResizeObserver(fitMap).observe(document.getElementById('map'));
+      window.addEventListener('resize', () => {
+        fitMap();
+        resizeEnvPublicCircles();
+      });
+      if (window.ResizeObserver) {
+        new ResizeObserver(() => {
+          fitMap();
+          resizeEnvPublicCircles();
+        }).observe(document.getElementById('map'));
+      }
 
+      if (warningKind() === 'env') {
+        addEnvRoads(publicMap);
+        addEnvPublicMarkers();
+      }
       refreshData();
     })
     .catch(err => console.error('Map load error:', err));
@@ -459,7 +530,28 @@ async function refreshData(showPopup = false) {
   publicRefreshTimer = setTimeout(() => refreshData(false), Math.max(50, delay));
 }
 
+function applyPublicKindChrome() {
+  document.querySelectorAll('[data-kind-tab]').forEach(link => {
+    const on = link.dataset.kindTab === warningKind();
+    link.classList.toggle('bg-brand-600', on);
+    link.classList.toggle('text-white', on);
+    link.classList.toggle('text-brand-600', !on);
+    link.classList.toggle('bg-white', !on);
+  });
+  if (warningKind() !== 'env') return;
+  document.title = 'Avertizări de mediu — Moldova';
+  const crumb = document.getElementById('crumb-current');
+  if (crumb) crumb.textContent = 'Avertizări de mediu';
+  const heading = document.getElementById('page-heading');
+  if (heading) heading.textContent = 'AVERTIZĂRI DE MEDIU';
+  const popupTitle = document.getElementById('popup-title');
+  if (popupTitle) popupTitle.textContent = 'Avertizare privind poluarea aerului';
+  const adminLink = document.querySelector('a[href="/login"]');
+  if (adminLink) adminLink.setAttribute('href', '/login?next=' + encodeURIComponent('/admin/environmental'));
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
+applyPublicKindChrome();
 initPublicMap();
 
 window.addEventListener('load', async () => {

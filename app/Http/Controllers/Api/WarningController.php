@@ -3,16 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminUser;
 use App\Models\Warning;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class WarningController extends Controller
 {
-    /** GET /api/warnings — public, returns all active warnings */
-    public function index(): JsonResponse
+    /** GET /api/warnings — public, returns active warnings of one kind */
+    public function index(Request $request): JsonResponse
     {
         $warnings = Warning::query()
+            ->where('kind', $this->kind($request))
             ->orderBy('created_at', 'desc')
             ->get()
             ->filter(fn (Warning $w) => $w->isCurrentlyActive())
@@ -26,6 +28,7 @@ class WarningController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
+            'kind'         => 'sometimes|in:meteo,env',
             'phenomenon'   => 'required|string|max:255',
             'emitDate'     => 'required|date',
             'intervalFrom' => 'required|date',
@@ -37,7 +40,14 @@ class WarningController extends Controller
             'mapImage'     => 'nullable|string',
         ]);
 
+        $actor = $this->sessionKind($request);
+        $kind = $data['kind'] ?? ($actor === 'full' ? 'meteo' : $actor);
+        if ($actor !== 'full' && $kind !== $actor) {
+            abort(403, 'Nu ai acces la acest tip de avertizare');
+        }
+
         $warning = Warning::create([
+            'kind'          => $kind,
             'phenomenon'    => $data['phenomenon'],
             'emit_date'     => $data['emitDate'],
             'interval_from' => $data['intervalFrom'],
@@ -51,18 +61,44 @@ class WarningController extends Controller
     }
 
     /** DELETE /api/warnings/{id} — admin only */
-    public function destroy(Warning $warning): JsonResponse
+    public function destroy(Request $request, Warning $warning): JsonResponse
     {
+        $this->assertSessionKind($request, $warning->kind);
         $warning->delete();
 
         return response()->json(['ok' => true]);
     }
 
-    /** DELETE /api/warnings — admin only, clears all */
-    public function destroyAll(): JsonResponse
+    /** DELETE /api/warnings — admin only, clears one kind */
+    public function destroyAll(Request $request): JsonResponse
     {
-        Warning::query()->delete();
+        $kind = $this->kind($request);
+        $this->assertSessionKind($request, $kind);
+        Warning::query()->where('kind', $kind)->delete();
 
         return response()->json(['ok' => true]);
+    }
+
+    private function kind(Request $request): string
+    {
+        $kind = (string) $request->input('kind', 'meteo');
+
+        return in_array($kind, ['meteo', 'env'], true) ? $kind : 'meteo';
+    }
+
+    private function sessionKind(Request $request): string
+    {
+        $admin = AdminUser::find($request->session()->get('admin_id'));
+        $kind = $admin->kind ?? 'meteo';
+
+        return in_array($kind, ['meteo', 'env', 'full'], true) ? $kind : 'meteo';
+    }
+
+    private function assertSessionKind(Request $request, string $kind): void
+    {
+        $actor = $this->sessionKind($request);
+        if ($actor !== 'full' && $actor !== $kind) {
+            abort(403, 'Nu ai acces la acest tip de avertizare');
+        }
     }
 }

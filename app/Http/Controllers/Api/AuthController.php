@@ -16,9 +16,13 @@ class AuthController extends Controller
         $request->validate([
             'user'     => 'required|string',
             'password' => 'required|string',
+            'kind'     => 'required|in:meteo,env,full',
         ]);
 
-        $admin = AdminUser::where('username', $request->user)->first();
+        $admin = AdminUser::query()
+            ->where('username', $request->user)
+            ->where('kind', $request->kind)
+            ->first();
 
         if (! $admin || ! Hash::check($request->password, $admin->password)) {
             return response()->json(
@@ -29,9 +33,10 @@ class AuthController extends Controller
 
         $token = $request->session()->getId();
         $request->session()->put('admin_id', $admin->id);
+        $request->session()->put('admin_kind', $admin->kind);
         $request->session()->regenerate();
 
-        return response()->json(['ok' => true]);
+        return response()->json(['ok' => true, 'kind' => $admin->kind]);
     }
 
     /** POST /api/logout */
@@ -55,6 +60,10 @@ class AuthController extends Controller
             return response()->json(['ok' => false], 401);
         }
 
-        return response()->json(['ok' => true, 'user' => $admin->username]);
+        return response()->json([
+            'ok' => true,
+            'user' => $admin->username,
+            'kind' => $admin->kind,
+        ]);
     }
 }

@@ -7,23 +7,39 @@
 
 // ── API helpers ───────────────────────────────────────────────────────────────
 
+function warningKind() {
+  if (window.WARNING_KIND === 'env' || window.WARNING_KIND === 'meteo') return window.WARNING_KIND;
+  const path = (location.pathname || '/').replace(/\/+$/, '') || '/';
+  const env = path === '/environmental'
+    || path.startsWith('/environmental/')
+    || path.startsWith('/admin/environmental');
+  return env ? 'env' : 'meteo';
+}
+
 function isWarningActive(item) {
   const t = getExpiryTime(item);
   return !t || t > Date.now();
 }
 
+let warningsCache = [];
+
 async function getWarnings() {
-  const res = await fetch('/api/warnings');
-  if (!res.ok) return [];
+  const res = await fetch('/api/warnings?kind=' + encodeURIComponent(warningKind()));
+  if (!res.ok) return warningsCache = [];
   const data = await res.json();
-  return (Array.isArray(data) ? data : []).filter(isWarningActive);
+  warningsCache = (Array.isArray(data) ? data : []).filter(isWarningActive);
+  return warningsCache;
+}
+
+function currentWarnings() {
+  return warningsCache;
 }
 
 async function addWarning(payload) {
   const res = await fetch('/api/warnings', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-    body:    JSON.stringify(payload),
+    body:    JSON.stringify(Object.assign({ kind: warningKind() }, payload)),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -41,7 +57,7 @@ async function deleteWarning(id) {
 }
 
 async function clearWarnings() {
-  const res = await fetch('/api/warnings', {
+  const res = await fetch('/api/warnings?kind=' + encodeURIComponent(warningKind()), {
     method: 'DELETE',
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
   });

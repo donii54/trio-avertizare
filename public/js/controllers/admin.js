@@ -8,6 +8,10 @@
 
 const NORMAL_COLOR = '#28D762';
 
+const ENV_PHENOMENA = [
+  'Impactul poluarii aerului',
+];
+
 const PHENOMENA = [
   'Obaje (descărcări electrice)',
   'Instabilitate atmosferică (descărcări electrice)',
@@ -44,10 +48,14 @@ let currentColor   = '#FFED00';
 const districtData = {};
 
 // ── View transitions ──────────────────────────────────────────────────────────
+function adminBase() {
+  return warningKind() === 'env' ? '/admin/environmental' : '/admin';
+}
+
 function showList() {
   document.body.classList.remove('editor-mode');
   if (location.hash === '#editor') {
-    history.replaceState(null, '', '/admin');
+    history.replaceState(null, '', adminBase());
   }
   loadAndRenderWarnings();
 }
@@ -55,7 +63,7 @@ function showList() {
 function showEditor() {
   document.body.classList.add('editor-mode');
   if (location.hash !== '#editor') {
-    history.replaceState(null, '', '/admin#editor');
+    history.replaceState(null, '', adminBase() + '#editor');
   }
   prepareEditorForm();
   requestAnimationFrame(() => {
@@ -72,7 +80,8 @@ async function loadAndRenderWarnings() {
 
 // ── Editor form ───────────────────────────────────────────────────────────────
 function prepareEditorForm() {
-  document.getElementById('phenomenon').value = '';
+  const phenomena = warningKind() === 'env' ? ENV_PHENOMENA : PHENOMENA;
+  document.getElementById('phenomenon').value = phenomena.length === 1 ? phenomena[0] : '';
   setDateField('intervalFrom', '');
   setDateField('intervalTo', '');
   document.getElementById('codes-container').innerHTML = '';
@@ -95,7 +104,23 @@ function prepareEditorForm() {
 function fillPhenomena() {
   const select = document.getElementById('phenomenon');
   if (!select || select.options.length > 1) return;
-  PHENOMENA.forEach(name => select.appendChild(new Option(name, name)));
+  const names = warningKind() === 'env' ? ENV_PHENOMENA : PHENOMENA;
+  names.forEach(name => select.appendChild(new Option(name, name)));
+}
+
+function applyAdminKindChrome() {
+  if (warningKind() !== 'env') return;
+  document.title = 'Avertizări de mediu — Administrare';
+  const title = document.getElementById('admin-title');
+  if (title) title.textContent = 'Avertizări de mediu';
+  const editorTitle = document.querySelector('#editor-view h1');
+  if (editorTitle) editorTitle.textContent = 'POLUAREA AERULUI';
+  const popupTitle = document.getElementById('admin-popup-title');
+  if (popupTitle) popupTitle.textContent = '⚠️ AVERTIZĂRI DE MEDIU';
+  const hint = document.querySelector('.paint-hint');
+  if (hint) hint.textContent = 'Click pe un cerc pentru a schimba culoarea. Verde resetează cercul.';
+  const paintAll = document.querySelector('.btn-paint-all');
+  if (paintAll) paintAll.textContent = 'Colorează toate cercurile';
 }
 
 function areRequiredFieldsFilled() {
@@ -192,7 +217,36 @@ function paintDistrict(layer, toggle) {
   setDistrictColor(layer, currentColor);
 }
 
+const envAdminMarkers = {};
+
+function paintEnvStation(id) {
+  const marker = envAdminMarkers[id];
+  if (!marker) return;
+  if (currentColor === NORMAL_COLOR) delete districtData[id];
+  else districtData[id] = { name: id, label: ENV_STATIONS[id].label, color: currentColor };
+  marker.setStyle(envMarkerOptions(districtData[id]?.color || NORMAL_COLOR));
+  updateCount();
+}
+
+function addEnvAdminMarkers() {
+  Object.entries(ENV_STATIONS).forEach(([id, station]) => {
+    const marker = L.circleMarker([station.lat, station.lng], Object.assign({ pane: 'markerPane' }, envMarkerOptions(NORMAL_COLOR))).addTo(adminMap);
+    marker.bindTooltip(station.label, {
+      permanent: true, direction: 'bottom', offset: [0, 6], className: 'district-label',
+    });
+    marker.on('click', event => {
+      L.DomEvent.stop(event);
+      paintEnvStation(id);
+    });
+    envAdminMarkers[id] = marker;
+  });
+}
+
 function paintAllDistricts() {
+  if (warningKind() === 'env') {
+    Object.keys(ENV_STATIONS).forEach(paintEnvStation);
+    return;
+  }
   if (!geojsonLayer) return;
   geojsonLayer.eachLayer(l => setDistrictColor(l, currentColor));
   if (typeof geojsonLayer.redraw === 'function') geojsonLayer.redraw();
@@ -200,6 +254,11 @@ function paintAllDistricts() {
 
 function resetMapColors() {
   Object.keys(districtData).forEach(k => delete districtData[k]);
+  if (warningKind() === 'env') {
+    Object.keys(envAdminMarkers).forEach(id => envAdminMarkers[id].setStyle(envMarkerOptions(NORMAL_COLOR)));
+    updateCount();
+    return;
+  }
   if (geojsonLayer) geojsonLayer.eachLayer(l => geojsonLayer.resetStyle(l));
   updateCount();
 }
@@ -233,17 +292,22 @@ function initAdminMap() {
   fetch('/data/MD_MAP.geojson')
     .then(r => r.json())
     .then(data => {
+      const envMap = warningKind() === 'env';
+      if (envMap) addEnvCountryOutline(adminMap, data);
       geojsonLayer = L.geoJSON(data, {
-        style: { color: '#f2f7f7', weight: 1.2, fillColor: NORMAL_COLOR, fillOpacity: 0.85 },
+        style: envMap
+          ? { color: ENV_LAND_FILL, weight: 3, fillColor: ENV_LAND_FILL, fillOpacity: 1 }
+          : { color: '#f2f7f7', weight: 1.2, fillColor: NORMAL_COLOR, fillOpacity: 0.85 },
         onEachFeature: (feature, layer) => {
           const fullName = feature.properties.shapeName || feature.properties.NAME || feature.properties.name || '???';
-          const label    = districtLabel(fullName);
+          const label    = envMap ? envPlaceName(fullName) : districtLabel(fullName);
           layer.feature.properties._name  = fullName;
           layer.feature.properties._label = label;
           layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label' });
 
           layer.on({
             mouseover(e) {
+              if (warningKind() === 'env') return;
               geojsonLayer.eachLayer(l => {
                 const id = getId(l.feature);
                 districtData[id]
@@ -254,16 +318,21 @@ function initAdminMap() {
               e.target.bringToFront();
             },
             mouseout(e) {
+              if (warningKind() === 'env') return;
               const id = getId(feature);
               districtData[id]
                 ? e.target.setStyle({ fillColor: districtData[id].color, fillOpacity: 0.85, weight: 1.2, color: '#64748b' })
                 : geojsonLayer.resetStyle(e.target);
             },
-            click(e)    { if (e.originalEvent?.shiftKey)  { L.DomEvent.stop(e); paintDistrict(e.target, false); } },
-            dblclick(e) { if (!e.originalEvent?.shiftKey) { L.DomEvent.stop(e); paintDistrict(e.target, true);  } },
+            click(e)    { if (warningKind() !== 'env' && e.originalEvent?.shiftKey)  { L.DomEvent.stop(e); paintDistrict(e.target, false); } },
+            dblclick(e) { if (warningKind() !== 'env' && !e.originalEvent?.shiftKey) { L.DomEvent.stop(e); paintDistrict(e.target, true);  } },
           });
         },
       }).addTo(adminMap);
+      if (warningKind() === 'env') {
+        addEnvRoads(adminMap);
+        addEnvAdminMarkers();
+      }
       setTimeout(refreshMapSize, 50);
     })
     .catch(err => { alert('Nu s-a putut încărca harta.'); console.error(err); });
@@ -274,7 +343,9 @@ function validatePaintedCodes(codes) {
   const districts    = paintedDistricts();
   const codeColorSet = codes.map(c => CODE_COLORS[c]).filter(Boolean);
   if (!districts.length || !districts.some(d => codeColorSet.includes(d.color))) {
-    alert('Colorează cel puțin un raion cu culoarea codului selectat');
+    alert(warningKind() === 'env'
+      ? 'Colorează cel puțin un cerc cu culoarea codului selectat'
+      : 'Colorează cel puțin un raion cu culoarea codului selectat');
     return false;
   }
   return true;
@@ -300,7 +371,7 @@ async function sendToServer() {
   btn.textContent = 'Se trimite...';
 
   try {
-    adminMap.invalidateSize(true);
+    if (adminMap) adminMap.invalidateSize(true);
     await new Promise(r => setTimeout(r, 400));
 
     const canvas = await html2canvas(document.getElementById('map'), {
@@ -359,6 +430,10 @@ async function scheduleExpiryCheck() {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 async function startAdmin() {
   document.body.classList.add('logged-in');
+  applyAdminKindChrome();
+  document.querySelectorAll('[data-kind-tab]').forEach(link => {
+    link.classList.toggle('is-active', link.dataset.kindTab === warningKind());
+  });
   initAdminMap();
   await loadAndRenderWarnings();
   fillTimeSelects();
@@ -385,10 +460,16 @@ async function startAdmin() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const authed = await checkAuth();
+  const authed = await checkAuth(warningKind() === 'env' ? 'env' : 'meteo');
   if (!authed) {
-    window.location.replace('/login');
+    const next = encodeURIComponent(adminBase());
+    window.location.replace('/login?next=' + next);
     return;
+  }
+  if (adminSessionKind !== 'full') {
+    document.querySelectorAll('.kind-tabs a').forEach(link => {
+      link.hidden = link.dataset.kindTab !== (warningKind() === 'env' ? 'env' : 'meteo');
+    });
   }
   startAdmin();
 });

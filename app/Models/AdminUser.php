@@ -11,7 +11,7 @@ class AdminUser extends Model implements AuthenticatableContract
     use Authenticatable;
 
     protected $table    = 'admin_users';
-    protected $fillable = ['username', 'password'];
+    protected $fillable = ['username', 'password', 'kind'];
     protected $hidden   = ['password'];
 
     protected $casts = [

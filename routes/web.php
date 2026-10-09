@@ -3,11 +3,17 @@
 use App\Http\Middleware\RequireAdminSession;
 use Illuminate\Support\Facades\Route;
 
-// Public map — no authentication
-Route::get('/', function () {
-    return response(file_get_contents(public_path('index.html')))
+$servePublic = function (string $file) {
+    return response(file_get_contents(public_path($file)))
         ->header('Content-Type', 'text/html; charset=UTF-8');
-});
+};
+
+// Public map — no authentication
+Route::get('/', fn () => $servePublic('index.html'));
+
+// Air-pollution warnings — same map, separate data
+Route::get('/environmental/widget', fn () => $servePublic('widget.html'));
+Route::get('/environmental', fn () => $servePublic('index.html'));
 
 // Portal / hub page — switch between map, widget, admin
 Route::get('/home', function () {
@@ -22,7 +28,8 @@ Route::get('/login', function () {
 });
 
 // Warning editor (and saved-warning list). Guests are redirected to /login.
-Route::get('/admin', function () {
-    return response(file_get_contents(public_path('admin.html')))
-        ->header('Content-Type', 'text/html; charset=UTF-8');
-})->middleware(RequireAdminSession::class);
+Route::get('/admin/environmental', fn () => $servePublic('admin.html'))
+    ->middleware(RequireAdminSession::class.':env');
+
+Route::get('/admin', fn () => $servePublic('admin.html'))
+    ->middleware(RequireAdminSession::class.':meteo');

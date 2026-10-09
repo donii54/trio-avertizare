@@ -13,7 +13,7 @@
   <section id="login-view" class="active">
     <form class="login-card" id="login-form">
       <h1>Administrare</h1>
-      <p>Avertizări Meteorologice</p>
+      <p id="login-subtitle">Avertizări Meteorologice</p>
       <label>
         Login
         <input type="text" id="login-user" autocomplete="username" required>
@@ -28,13 +28,21 @@
   </section>
 
   <script>
-    const EDITOR_URL = '/admin';
+    const next = new URLSearchParams(location.search).get('next');
+    const LOGIN_KIND = next === '/admin/environmental' ? 'env' : (next === '/admin/full' ? 'full' : 'meteo');
+    const EDITOR_URL = LOGIN_KIND === 'env' ? '/admin/environmental' : '/admin';
+    if (LOGIN_KIND === 'env') {
+      document.getElementById('login-subtitle').textContent = 'Avertizări de mediu';
+    } else if (LOGIN_KIND === 'full') {
+      document.getElementById('login-subtitle').textContent = 'Administrare completă';
+    }
 
     // Already authenticated → open the admin list
     (async () => {
       try {
         const res = await fetch('/api/me');
-        if (res.ok && (await res.json()).ok) window.location.replace(EDITOR_URL);
+        const data = res.ok ? await res.json() : null;
+        if (data?.ok && data.kind === LOGIN_KIND) window.location.replace(EDITOR_URL);
       } catch {}
     })();
 
@@ -49,7 +57,11 @@
         const res  = await fetch('/api/login', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ user, password }),
+          body:    JSON.stringify({
+            user,
+            password,
+            kind: LOGIN_KIND,
+          }),
         });
         const data = await res.json();
         if (data.ok) {

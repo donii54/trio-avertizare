@@ -74,7 +74,7 @@ function renderSavedWarnings(data = []) {
 }
 
 function openAdminPopup(index) {
-  const data = getWarnings();
+  const data = currentWarnings();
   const item = data[index];
   if (!item) return;
 

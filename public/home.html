@@ -56,9 +56,13 @@
     }
     .tab:hover { background: #eef4fb; color: var(--brand); }
     .tab.is-active { background: var(--brand); color: #fff; }
+    .tabs-main { margin-bottom: 12px; }
+    .tabs-sub { margin-top: 0; background: #fff; }
 
     .panel { display: none; }
     .panel.is-active { display: block; }
+    .subpanel { display: none; }
+    .subpanel.is-active { display: block; }
 
     .grid {
       display: grid;
@@ -109,7 +113,7 @@
       min-height: 420px;
     }
     .preview iframe { width: 100%; height: 520px; border: 0; display: block; background: transparent; }
-    #panel-preview-map .preview iframe { background: #fff; }
+    .preview-map .preview iframe { background: #fff; }
     .preview-bar {
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
       padding: 12px 14px; border-bottom: 1px solid var(--line); background: #fff;
@@ -138,20 +142,36 @@
     <header>
       <div class="crumb">
         <span>Avertizare AMM</span>
-        <a href="/login">Administrare</a>
+        <a href="/login?next=/admin/full">Administrare completă</a>
       </div>
       <h1>ACASĂ</h1>
       <p class="lead">Alege pagina: hartă publică, widget pentru meteo.md sau administrare. Poți și previzualiza mai jos fără să părăsești această pagină.</p>
     </header>
 
-    <div class="tabs" role="tablist">
-      <button class="tab is-active" type="button" data-tab="pages" role="tab">Pagini</button>
-      <button class="tab" type="button" data-tab="preview-map" role="tab">Previzualizare hartă</button>
-      <button class="tab" type="button" data-tab="preview-widget" role="tab">Previzualizare widget</button>
-      <button class="tab" type="button" data-tab="links" role="tab">Link-uri utile</button>
+    <div class="tabs tabs-main" role="tablist">
+      <button class="tab is-active" type="button" data-kind="meteo" role="tab">Meteorologice</button>
+      <button class="tab" type="button" data-kind="env" role="tab">Mediu</button>
     </div>
 
-    <section class="panel is-active" id="panel-pages">
+    <section class="panel is-active" id="panel-meteo">
+      <div class="tabs tabs-sub" role="tablist">
+        <button class="tab" type="button" data-sub="admin" role="tab">Admin</button>
+        <button class="tab is-active" type="button" data-sub="pages" role="tab">Pagini</button>
+        <button class="tab" type="button" data-sub="map" role="tab">Previzualizare hartă</button>
+        <button class="tab" type="button" data-sub="widget" role="tab">Previzualizare widget</button>
+        <button class="tab" type="button" data-sub="links" role="tab">Link-uri utile</button>
+      </div>
+      <div class="subpanel" data-sub="admin">
+        <div class="grid">
+          <a class="card" href="/admin">
+            <span class="badge">Admin</span>
+            <h2>Administrare meteorologică</h2>
+            <p>Creare / ștergere avertizări, colorare raioane, intervale de timp. Necesită autentificare.</p>
+            <span class="go">Deschide →</span>
+          </a>
+        </div>
+      </div>
+      <div class="subpanel is-active" data-sub="pages">
       <div class="grid">
         <a class="card" href="/">
           <span class="badge">Public</span>
@@ -171,12 +191,6 @@
           <p>Versiunea pentru iframe pe pagina Avertizări meteorologice (fără header și login).</p>
           <span class="go">Deschide →</span>
         </a>
-        <a class="card" href="/admin">
-          <span class="badge">Admin</span>
-          <h2>Administrare</h2>
-          <p>Creare / ștergere avertizări, colorare raioane, intervale de timp. Necesită autentificare.</p>
-          <span class="go">Deschide →</span>
-        </a>
       </div>
       <div class="codes">
         <span><i class="dot" style="background:var(--green)"></i> scăzut</span>
@@ -184,73 +198,152 @@
         <span><i class="dot" style="background:var(--orange)"></i> ridicat</span>
         <span><i class="dot" style="background:var(--red)"></i> foarte mare</span>
       </div>
-    </section>
-
-    <section class="panel" id="panel-preview-map">
-      <div class="preview">
-        <div class="preview-bar">
-          <strong>Hartă completă</strong>
-          <a href="/" target="_blank" rel="noopener">Deschide în tab nou</a>
+      </div>
+      <div class="subpanel preview-map" data-sub="map">
+        <div class="preview">
+          <div class="preview-bar">
+            <strong>Hartă meteorologică</strong>
+            <a href="/" target="_blank" rel="noopener">Deschide în tab nou</a>
+          </div>
+          <iframe data-src="/?embed=1" title="Previzualizare harta meteorologică"></iframe>
         </div>
-        <iframe src="/?embed=1" title="Previzualizare harta completa"></iframe>
+      </div>
+      <div class="subpanel" data-sub="widget">
+        <div class="preview">
+          <div class="preview-bar">
+            <strong>Widget meteorologic</strong>
+            <a href="/widget.html" target="_blank" rel="noopener">Deschide în tab nou</a>
+          </div>
+          <iframe data-src="/widget.html" title="Previzualizare widget meteorologic" style="height:360px;background:transparent;" allowtransparency="true"></iframe>
+        </div>
+        <p class="note">Pentru meteo.md folosește: <code>https://avertizare.31.131.24.146.sslip.io/widget.html</code> — iframe cu <code>style="background:transparent;border:0"</code></p>
+      </div>
+      <div class="subpanel" data-sub="links">
+        <div class="grid">
+          <a class="card" href="/api/warnings" target="_blank" rel="noopener">
+            <span class="badge">API</span>
+            <h2>/api/warnings</h2>
+            <p>JSON cu avertizările meteorologice active.</p>
+            <span class="go">Deschide JSON →</span>
+          </a>
+          <a class="card" href="https://www.meteo.md/" target="_blank" rel="noopener">
+            <span class="badge">Site</span>
+            <h2>meteo.md</h2>
+            <p>Site-ul principal AMM unde se montează popup-ul și widget-ul meteorologic.</p>
+            <span class="go">Deschide →</span>
+          </a>
+        </div>
       </div>
     </section>
 
-    <section class="panel" id="panel-preview-widget">
-      <div class="preview">
-        <div class="preview-bar">
-          <strong>Widget — doar harta</strong>
-          <a href="/widget.html" target="_blank" rel="noopener">Deschide în tab nou</a>
-        </div>
-        <iframe src="/widget.html" title="Previzualizare widget" style="height:360px;background:transparent;" allowtransparency="true"></iframe>
+    <section class="panel" id="panel-env">
+      <div class="tabs tabs-sub" role="tablist">
+        <button class="tab" type="button" data-sub="admin" role="tab">Admin</button>
+        <button class="tab is-active" type="button" data-sub="pages" role="tab">Pagini</button>
+        <button class="tab" type="button" data-sub="map" role="tab">Previzualizare hartă</button>
+        <button class="tab" type="button" data-sub="widget" role="tab">Previzualizare widget</button>
+        <button class="tab" type="button" data-sub="links" role="tab">Link-uri utile</button>
       </div>
-      <p class="note">Pentru meteo.md folosește: <code>https://avertizare.31.131.24.146.sslip.io/widget.html</code> — iframe cu <code>style="background:transparent;border:0"</code></p>
-    </section>
-
-    <section class="panel" id="panel-links">
+      <div class="subpanel" data-sub="admin">
+        <div class="grid">
+          <a class="card" href="/admin/environmental">
+            <span class="badge">Admin</span>
+            <h2>Administrare mediu</h2>
+            <p>Editor separat: fenomenul «Impactul poluarii aerului», coduri galben / portocaliu / roșu.</p>
+            <span class="go">Deschide →</span>
+          </a>
+        </div>
+      </div>
+      <div class="subpanel is-active" data-sub="pages">
       <div class="grid">
-        <a class="card" href="/api/warnings" target="_blank" rel="noopener">
-          <span class="badge">API</span>
-          <h2>/api/warnings</h2>
-          <p>JSON cu avertizările active. Folosit de meteo.md și de harta publică.</p>
-          <span class="go">Deschide JSON →</span>
-        </a>
-        <a class="card" href="/login">
-          <span class="badge">Auth</span>
-          <h2>Login</h2>
-          <p>Autentificare administrator înainte de editorul de avertizări.</p>
+        <a class="card" href="/environmental">
+          <span class="badge">Public</span>
+          <h2>Hartă de mediu</h2>
+          <p>Aceeași hartă modernă ca la avertizările meteorologice. Cercurile stațiilor își schimbă culoarea când există o avertizare.</p>
           <span class="go">Deschide →</span>
         </a>
-        <a class="card" href="https://www.meteo.md/" target="_blank" rel="noopener">
-          <span class="badge">Site</span>
-          <h2>meteo.md</h2>
-          <p>Site-ul principal AMM unde se montează popup-ul și widget-ul.</p>
+        <a class="card" href="/environmental/widget">
+          <span class="badge">Widget</span>
+          <h2>Widget mediu</h2>
+          <p>Harta goală pentru iframe pe pagina environmental/current-warnings de pe meteo.md.</p>
           <span class="go">Deschide →</span>
         </a>
-        <a class="card" href="/home">
-          <span class="badge">Acasă</span>
-          <h2>Reîncarcă portalul</h2>
-          <p>Această pagină de navigare între toate ecranele Avertizare AMM.</p>
-          <span class="go">Refresh →</span>
+        <a class="card" href="/environmental?embed=1">
+          <span class="badge">Embed</span>
+          <h2>Hartă embed</h2>
+          <p>Versiunea fără header, pentru încorporare în pagina de avertizări de mediu.</p>
+          <span class="go">Deschide →</span>
         </a>
+      </div>
+      </div>
+      <div class="subpanel preview-map" data-sub="map">
+        <div class="preview">
+          <div class="preview-bar">
+            <strong>Hartă de mediu</strong>
+            <a href="/environmental" target="_blank" rel="noopener">Deschide în tab nou</a>
+          </div>
+          <iframe data-src="/environmental?embed=1" title="Previzualizare harta de mediu"></iframe>
+        </div>
+      </div>
+      <div class="subpanel" data-sub="widget">
+        <div class="preview">
+          <div class="preview-bar">
+            <strong>Widget de mediu</strong>
+            <a href="/environmental/widget" target="_blank" rel="noopener">Deschide în tab nou</a>
+          </div>
+          <iframe data-src="/environmental/widget" title="Previzualizare widget de mediu" style="height:360px;background:transparent;" allowtransparency="true"></iframe>
+        </div>
+        <p class="note">Pentru pagina de mediu de pe meteo.md folosește iframe către <code>/environmental/widget</code>.</p>
+      </div>
+      <div class="subpanel" data-sub="links">
+        <div class="grid">
+          <a class="card" href="/api/warnings?kind=env" target="_blank" rel="noopener">
+            <span class="badge">API</span>
+            <h2>/api/warnings?kind=env</h2>
+            <p>JSON cu avertizările de mediu. Nu se amestecă cu cele meteorologice.</p>
+            <span class="go">Deschide JSON →</span>
+          </a>
+          <a class="card" href="https://www.meteo.md/index.php/ro/environmental/current-warnings" target="_blank" rel="noopener">
+            <span class="badge">Site</span>
+            <h2>Avertizări de mediu</h2>
+            <p>Pagina oficială meteo.md unde se montează harta de poluare a aerului.</p>
+            <span class="go">Deschide →</span>
+          </a>
+        </div>
       </div>
     </section>
   </div>
 
   <script>
-    const tabs = document.querySelectorAll('.tab');
-    const panels = {
-      pages: document.getElementById('panel-pages'),
-      'preview-map': document.getElementById('panel-preview-map'),
-      'preview-widget': document.getElementById('panel-preview-widget'),
-      links: document.getElementById('panel-links'),
-    };
-    tabs.forEach(tab => {
+    function showSub(panel, name) {
+      panel.querySelectorAll('.tabs-sub .tab').forEach(tab => {
+        tab.classList.toggle('is-active', tab.dataset.sub === name);
+      });
+      panel.querySelectorAll('.subpanel').forEach(sub => {
+        const on = sub.dataset.sub === name;
+        sub.classList.toggle('is-active', on);
+        if (!on) return;
+        sub.querySelectorAll('iframe[data-src]').forEach(frame => {
+          if (!frame.getAttribute('src')) frame.src = frame.dataset.src;
+        });
+      });
+    }
+
+    document.querySelectorAll('.tabs-main .tab').forEach(tab => {
       tab.addEventListener('click', () => {
-        tabs.forEach(t => t.classList.remove('is-active'));
+        document.querySelectorAll('.tabs-main .tab').forEach(item => item.classList.remove('is-active'));
         tab.classList.add('is-active');
-        Object.values(panels).forEach(p => p.classList.remove('is-active'));
-        panels[tab.dataset.tab].classList.add('is-active');
+        document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('is-active'));
+        const panel = document.getElementById('panel-' + tab.dataset.kind);
+        panel.classList.add('is-active');
+        const current = panel.querySelector('.tabs-sub .tab.is-active');
+        showSub(panel, current ? current.dataset.sub : 'pages');
+      });
+    });
+
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.querySelectorAll('.tabs-sub .tab').forEach(tab => {
+        tab.addEventListener('click', () => showSub(panel, tab.dataset.sub));
       });
     });
   </script>

@@ -32,22 +32,25 @@
       background: transparent !important;
     }
     .leaflet-control-container { display: none !important; }
-    .district-label {
+    .district-label,
+    .city-label {
       background: transparent !important; border: none !important; box-shadow: none !important;
       font-family: Arial, Helvetica, sans-serif;
       font-size: 9px; font-weight: 700; color: #14532d;
       text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
       pointer-events: none;
     }
+    .city-label { font-weight: 600; }
     @media (max-width: 420px) {
-      .district-label { font-size: 7px !important; }
+      .district-label, .city-label { font-size: 7px !important; }
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script src="/js/district-codes.js"></script>
-  <script src="/js/models/warnings.js?v=20260908nohover"></script>
-  <script src="/js/controllers/public-map.js?v=20260908nohover"></script>
+  <script src="/js/env-stations.js?v=20261009causeni"></script>
+  <script src="/js/models/warnings.js?v=20261009env"></script>
+  <script src="/js/controllers/public-map.js?v=20261009preview"></script>
 </body>
 </html>
