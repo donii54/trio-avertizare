@@ -346,19 +346,13 @@ function stationColors(data) {
 const envPublicMarkers = {};
 
 function envPublicRadius() {
-  if (IS_MAP_WIDGET) return 14;
-  const mapEl = document.getElementById('map');
-  const shortSide = Math.min(
-    mapEl && mapEl.clientWidth ? mapEl.clientWidth : window.innerWidth,
-    mapEl && mapEl.clientHeight ? mapEl.clientHeight : window.innerHeight
-  );
-  if (shortSide < 700) return 14;
-  return 30;
+  if (IS_MAP_WIDGET || window.self !== window.top || window.innerWidth < 901) return 14;
+  return 28;
 }
 
 function resizeEnvPublicCircles() {
   const radius = envPublicRadius();
-  const weight = radius > 22 ? 5 : 4;
+  const weight = radius >= 80 ? 10 : (radius > 22 ? 5 : 4);
   Object.values(envPublicMarkers).forEach(marker => marker.setStyle({ radius, weight }));
 }
 

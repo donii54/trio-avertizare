@@ -119,7 +119,7 @@ function envMarkerOptions(color, radius) {
   return {
     radius: size,
     color: '#ffffff',
-    weight: size > 22 ? 5 : 4,
+    weight: size >= 80 ? 10 : (size > 22 ? 5 : 4),
     opacity: 1,
     fillColor: envFillColor(color),
     fillOpacity: 1,

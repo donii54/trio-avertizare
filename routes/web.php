@@ -15,6 +15,10 @@ Route::get('/', fn () => $servePublic('index.html'));
 Route::get('/environmental/widget', fn () => $servePublic('widget.html'));
 Route::get('/environmental', fn () => $servePublic('index.html'));
 
+// Editor home for people who add warnings. Public maps stay unchanged.
+Route::get('/editor/environmental', fn () => $servePublic('editor.html'));
+Route::get('/editor', fn () => $servePublic('editor.html'));
+
 // Portal / hub page — switch between map, widget, admin
 Route::get('/home', function () {
     return response(file_get_contents(public_path('home.html')))

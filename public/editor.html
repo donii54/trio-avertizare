@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor avertizări</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      color: #0f2749;
+      background: #f4f6f8;
+    }
+    .desk {
+      height: 100%;
+      display: flex;
+      min-height: 0;
+    }
+    .map-side {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      padding: 16px;
+    }
+    .map-frame {
+      height: 100%;
+      background: #e7f6ee;
+      border: 1px solid #d7e6f6;
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .map-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: transparent;
+    }
+    .side {
+      width: 360px;
+      flex: 0 0 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+      padding: 28px 24px;
+    }
+    .side h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #1e4b8e;
+    }
+    .warnings {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .warn {
+      background: #fff;
+      border: 1px solid #d7e6f6;
+      border-radius: 14px;
+      padding: 12px 14px;
+    }
+    .warn h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e4b8e;
+    }
+    .when, .empty, .code p {
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .when { margin-top: 4px; }
+    .code { margin-top: 10px; }
+    .code-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f2749;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex: 0 0 auto;
+    }
+    .code p { margin-top: 4px; white-space: pre-wrap; }
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: #1e4b8e;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .admin-btn:hover { background: #163a6e; }
+    @media (max-width: 800px) {
+      .desk { flex-direction: column; }
+      .map-side { flex: 1 1 auto; padding: 12px 12px 0; }
+      .side { width: auto; flex: 0 0 auto; padding: 16px 12px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="desk">
+    <div class="map-side">
+      <div class="map-frame">
+        <iframe id="editor-map" title="Harta avertizărilor"></iframe>
+      </div>
+    </div>
+    <aside class="side">
+      <h1 id="editor-title">Avertizări meteorologice</h1>
+      <div class="warnings" id="editor-warnings"></div>
+      <a class="admin-btn" id="editor-admin" href="/login?next=/admin">Administrare</a>
+    </aside>
+  </div>
+  <script>
+    const env = location.pathname.startsWith('/editor/environmental');
+    document.title = env ? 'Editor mediu' : 'Editor meteorologic';
+    document.getElementById('editor-title').textContent = env
+      ? 'Avertizări de mediu'
+      : 'Avertizări meteorologice';
+    document.getElementById('editor-map').src = env ? '/environmental/widget' : '/widget.html';
+    document.getElementById('editor-admin').href = env
+      ? '/login?next=/admin/environmental'
+      : '/login?next=/admin';
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function codeColor(code) {
+      const text = String(code || '');
+      if (text.includes('ROȘU')) return '#FF0000';
+      if (text.includes('PORTOCALIU')) return '#FF8A00';
+      if (text.includes('VERDE')) return '#28D762';
+      return '#FFED00';
+    }
+
+    const box = document.getElementById('editor-warnings');
+    fetch(env ? '/api/warnings?kind=env' : '/api/warnings', { headers: { Accept: 'application/json' } })
+      .then(response => response.json())
+      .then(items => {
+        if (!Array.isArray(items) || items.length === 0) {
+          box.innerHTML = '<p class="empty">Nu există avertizări.</p>';
+          return;
+        }
+        box.innerHTML = items.map(item => {
+          const codes = Array.isArray(item.codes) ? item.codes : [];
+          const blocks = codes.map(code => `
+            <div class="code">
+              <div class="code-name">
+                <span class="dot" style="background:${codeColor(code.code)}"></span>
+                ${escapeHtml(code.code)}
+              </div>
+              <p>${escapeHtml(code.description || 'Fără descriere')}</p>
+            </div>`).join('');
+          return `
+            <article class="warn">
+              <h2>${escapeHtml(item.phenomenon || (env ? 'Avertizare de mediu' : 'Avertizare meteorologică'))}</h2>
+              <p class="when">${escapeHtml(item.interval || '')}</p>
+              ${blocks}
+            </article>`;
+        }).join('');
+      })
+      .catch(() => {
+        box.innerHTML = '<p class="empty">Avertizările nu au putut fi încărcate.</p>';
+      });
+  </script>
+</body>
+</html>
