@@ -303,7 +303,12 @@ function initAdminMap() {
           const label    = envMap ? envPlaceName(fullName) : districtLabel(fullName);
           layer.feature.properties._name  = fullName;
           layer.feature.properties._label = label;
-          layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label' });
+          if (label) layer.bindTooltip(label, {
+            permanent: true,
+            direction: 'center',
+            className: 'district-label',
+            offset: envMap ? envLabelOffset(fullName) : districtLabelOffset(fullName),
+          });
 
           layer.on({
             mouseover(e) {

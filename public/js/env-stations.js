@@ -62,7 +62,6 @@ const ENV_PLACE_NAMES = {
   Nisporeni: 'Nisporeni',
   Chisinau: 'Chișinău',
   'Anenii Noi': 'Anenii Noi',
-  Criuleni: 'Criuleni',
   Straseni: 'Strășeni',
   Ungheni: 'Ungheni',
   Dubasari: 'Dubăsari',
@@ -87,7 +86,13 @@ const ENV_PLACE_NAMES = {
 };
 
 function envPlaceName(shapeName) {
+  if (shapeName === 'Criuleni') return '';
   return ENV_PLACE_NAMES[shapeName] || shapeName;
+}
+
+function envLabelOffset(shapeName) {
+  if (shapeName === 'SIngerei' && window.innerWidth >= 901) return [0, 12];
+  return [0, 0];
 }
 
 const ENV_STATIONS = {

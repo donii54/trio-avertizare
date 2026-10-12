@@ -426,8 +426,8 @@ function initPublicMap() {
           const fullName = feature.properties.shapeName || feature.properties.NAME || feature.properties.name || '???';
           const label    = envMap ? envPlaceName(fullName) : districtLabel(fullName);
           layer.feature.properties._label = label;
-          if (!IS_MAP_WIDGET) {
-            layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label' });
+          if (!IS_MAP_WIDGET && label) {
+            layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label', offset: envMap ? envLabelOffset(fullName) : [0, 0] });
           }
 
           layer.on({
