@@ -109,6 +109,7 @@ function fillPhenomena() {
 }
 
 function applyAdminKindChrome() {
+  document.body.classList.toggle('kind-env', warningKind() === 'env');
   if (warningKind() !== 'env') return;
   document.title = 'Avertizări de mediu — Administrare';
   const title = document.getElementById('admin-title');

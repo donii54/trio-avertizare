@@ -193,6 +193,27 @@ body:not(.logged-in) #editor-view {
   color: #fff;
   border-color: #1e4b8e;
 }
+body.kind-env {
+  background: #f4fbf6;
+}
+body.kind-env .kind-tabs a {
+  color: #2f7a4a;
+  border-color: #c9e6d4;
+}
+body.kind-env .kind-tabs a.is-active {
+  background: #b7e0c4;
+  color: #1b4d32;
+  border-color: #b7e0c4;
+}
+body.kind-env #editor-view,
+body.kind-env #login-view {
+  background: #f4fbf6;
+}
+body.kind-env #list-view .admin-header h1,
+body.kind-env .panel h1,
+body.kind-env .btn-back {
+  color: #2f7a4a;
+}
 .logout-btn {
   background: none;
   border: 1px solid #cbd5e1;

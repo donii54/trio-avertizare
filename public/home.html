@@ -38,7 +38,6 @@
     .crumb a { color: var(--brand); text-decoration: none; font-weight: 600; }
     .crumb a:hover { text-decoration: underline; }
     h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 800; letter-spacing: 0.04em; color: var(--brand); }
-    .lead { margin-top: 8px; max-width: 620px; color: var(--muted); font-size: 15px; line-height: 1.5; }
 
     .tabs {
       display: flex; flex-wrap: wrap; gap: 8px;
@@ -131,6 +130,22 @@
     }
     .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; border: 1px solid rgba(15,23,42,.15); }
     .note { margin-top: 16px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+    body.kind-env {
+      --bg: #f4fbf6;
+      --panel: #e5f6ea;
+      --brand: #2f7a4a;
+      --brand-dark: #1f5c36;
+      --line: #d4eedc;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #e5f6ea 0%, transparent 55%),
+        radial-gradient(900px 420px at 100% 0%, #d4eedc 0%, transparent 50%),
+        var(--bg);
+    }
+    body.kind-env .tab:hover { background: #eef8f1; color: var(--brand); }
+    body.kind-env .tab.is-active { background: #b7e0c4; color: #1b4d32; }
+    body.kind-env code { background: #eef8f1; color: var(--brand-dark); }
+    body.kind-env .preview,
+    body.kind-env .preview iframe { background: #fff; }
     code {
       background: #eef4fb; color: var(--brand-dark);
       padding: 2px 6px; border-radius: 6px; font-size: 12px;
@@ -144,8 +159,7 @@
         <span>Avertizare AMM</span>
         <a href="/login?next=/admin/full">Administrare completă</a>
       </div>
-      <h1>ACASĂ</h1>
-      <p class="lead">Alege pagina: hartă publică, widget pentru meteo.md sau administrare. Poți și previzualiza mai jos fără să părăsești această pagină.</p>
+      <h1 id="home-title">Meteo</h1>
     </header>
 
     <div class="tabs tabs-main" role="tablist">
@@ -197,12 +211,6 @@
           <p>Harta activă și lista avertizărilor meteorologice cu intervalul și descrierea fiecărui cod.</p>
           <span class="go">Deschide →</span>
         </a>
-      </div>
-      <div class="codes">
-        <span><i class="dot" style="background:var(--green)"></i> scăzut</span>
-        <span><i class="dot" style="background:var(--yellow)"></i> mediu</span>
-        <span><i class="dot" style="background:var(--orange)"></i> ridicat</span>
-        <span><i class="dot" style="background:var(--red)"></i> foarte mare</span>
       </div>
       </div>
       <div class="subpanel preview-map" data-sub="map">
@@ -348,6 +356,8 @@
         document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('is-active'));
         const panel = document.getElementById('panel-' + tab.dataset.kind);
         panel.classList.add('is-active');
+        document.body.classList.toggle('kind-env', tab.dataset.kind === 'env');
+        document.getElementById('home-title').textContent = tab.dataset.kind === 'env' ? 'Mediu' : 'Meteo';
         const current = panel.querySelector('.tabs-sub .tab.is-active');
         showSub(panel, current ? current.dataset.sub : 'pages');
       });
@@ -358,6 +368,12 @@
         tab.addEventListener('click', () => showSub(panel, tab.dataset.sub));
       });
     });
+
+    const requestedKind = new URLSearchParams(location.search).get('kind');
+    if (requestedKind === 'env' || requestedKind === 'meteo') {
+      const requestedTab = document.querySelector('.tabs-main .tab[data-kind="' + requestedKind + '"]');
+      if (requestedTab) requestedTab.click();
+    }
   </script>
 </body>
 </html>

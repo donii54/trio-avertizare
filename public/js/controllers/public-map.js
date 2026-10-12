@@ -533,6 +533,8 @@ function applyPublicKindChrome() {
     link.classList.toggle('text-brand-600', !on);
     link.classList.toggle('bg-white', !on);
   });
+  const homeLink = document.querySelector('[data-home-link]');
+  if (homeLink) homeLink.setAttribute('href', '/home?kind=' + warningKind());
   if (warningKind() !== 'env') return;
   document.title = 'Avertizări de mediu — Moldova';
   const crumb = document.getElementById('crumb-current');
