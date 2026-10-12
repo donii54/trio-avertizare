@@ -94,7 +94,6 @@ const ENV_STATIONS = {
   balti:     { label: 'Bălți',    lat: 47.77404, lng: 27.93126 },
   mateuti:   { label: 'Mateuți',  lat: 47.69303, lng: 28.85393 },
   chisinau:  { label: 'Chișinău', lat: 47.01667, lng: 28.87131 },
-  bender:    { label: 'Căușeni', lat: 46.64928, lng: 29.32427 },
 };
 
 function envLevelClass(color) {
