@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Avertizări Meteorologice — Administrare</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/css/style.css?v=20261012envgreen" />
+  <link rel="stylesheet" href="/css/style.css?v=20261012dialog" />
   <!-- Tailwind must load before tailwind.config -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { corePlugins: { preflight: false } };</script>
@@ -23,7 +23,10 @@
           <a href="/admin/environmental" data-kind-tab="env">Mediu</a>
         </div>
       </div>
-      <button class="logout-btn" onclick="handleLogout()">Ieșire</button>
+      <div class="admin-actions">
+        <a class="logout-btn" id="admin-home" href="/home?kind=meteo">Acasă</a>
+        <button class="logout-btn" onclick="handleLogout()">Ieșire</button>
+      </div>
     </div>
 
     <div class="list" id="saved-list">
@@ -122,8 +125,8 @@
       <button class="btn-add" onclick="addCodeBlock()">Adaugă cod</button>
 
       <div class="btn-row">
-        <button class="btn btn-send" id="send-btn" onclick="sendToServer()" disabled>Trimite pe server</button>
         <button class="btn btn-reset" onclick="resetMapColors()">Resetează</button>
+        <button class="btn btn-send" id="send-btn" onclick="sendToServer()" disabled>Trimite pe server</button>
       </div>
     </div>
   </section>
@@ -154,7 +157,7 @@
   <div id="calendar-popover"
        class="hidden fixed z-[200] w-[300px] overflow-hidden rounded-2xl bg-white"
        style="border:1px solid #7BA3D4; box-shadow:0 0 0 1px rgba(30,75,142,0.12), 0 18px 40px rgba(30,75,142,0.22);">
-    <div style="background:linear-gradient(135deg,#1E4B8E,#163A6E); padding:12px; color:#fff;">
+    <div class="cal-head" style="background:linear-gradient(135deg,#1E4B8E,#163A6E); padding:12px; color:#fff;">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
         <button type="button" onclick="shiftCalendarMonth(-1)" aria-label="Luna anterioară"
                 style="width:28px;height:28px;border:1px solid rgba(123,163,212,0.7);border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;font-size:18px;line-height:1;cursor:pointer;">‹</button>
@@ -163,7 +166,7 @@
                 style="width:28px;height:28px;border:1px solid rgba(123,163,212,0.7);border-radius:999px;background:rgba(255,255,255,0.12);color:#fff;font-size:18px;line-height:1;cursor:pointer;">›</button>
       </div>
       <div style="border-radius:8px;background:rgba(255,255,255,0.12);padding:6px 10px;">
-        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:rgba(219,234,254,0.85);">Selectat</div>
+        <div class="cal-kicker" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.14em;color:rgba(219,234,254,0.85);">Selectat</div>
         <div id="calendar-selected-label" style="margin-top:2px;font-size:13px;font-weight:600;color:#fff;">—</div>
       </div>
     </div>
@@ -174,33 +177,43 @@
       </div>
       <div id="calendar-days" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
 
-      <div style="margin-top:10px;border:1px solid #7BA3D4;border-radius:12px;background:#EEF4FB;padding:10px;">
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#1E4B8E;">Ora</div>
+      <div class="cal-time" style="margin-top:10px;border:1px solid #7BA3D4;border-radius:12px;background:#EEF4FB;padding:10px;">
+        <div class="cal-ora" style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#1E4B8E;">Ora</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <select id="cal-hour"
                   style="flex:1;min-width:0;height:36px;border:1px solid #7BA3D4;border-radius:10px;background:#fff;padding:0 8px;font-size:14px;font-weight:600;color:#0f2749;outline:none;"></select>
-          <span style="font-size:16px;font-weight:700;color:#7BA3D4;">:</span>
+          <span class="cal-colon" style="font-size:16px;font-weight:700;color:#7BA3D4;">:</span>
           <select id="cal-minute"
                   style="flex:1;min-width:0;height:36px;border:1px solid #7BA3D4;border-radius:10px;background:#fff;padding:0 8px;font-size:14px;font-weight:600;color:#0f2749;outline:none;"></select>
         </div>
       </div>
 
       <div style="margin-top:10px;display:flex;gap:8px;">
-        <button type="button" onclick="setCalendarToday()"
+        <button type="button" class="cal-today" onclick="setCalendarToday()"
                 style="flex:1;border:1px solid #7BA3D4;border-radius:12px;background:#fff;color:#1E4B8E;padding:8px 12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 0 0 1px rgba(30,75,142,0.08);">Astăzi</button>
-        <button type="button" onclick="closeCalendar(true)"
+        <button type="button" class="cal-done" onclick="closeCalendar(true)"
                 style="flex:1;border:1px solid #7BA3D4;border-radius:12px;background:#1E4B8E;color:#fff;padding:8px 12px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 0 0 1px rgba(30,75,142,0.12),0 4px 12px rgba(30,75,142,0.22);">Gata</button>
       </div>
     </div>
   </div>
 
+  <div id="admin-dialog" class="admin-dialog" hidden>
+    <div class="admin-dialog-card" role="dialog" aria-modal="true" aria-labelledby="admin-dialog-text">
+      <p id="admin-dialog-text"></p>
+      <div class="admin-dialog-actions">
+        <button type="button" id="admin-dialog-cancel">Anulează</button>
+        <button type="button" id="admin-dialog-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Scripts (MVC load order: model → view → controller) ──────────── -->
-  <script src="/js/district-codes.js"></script>
-  <script src="/js/env-stations.js?v=20261012singerei12"></script>
+  <script src="/js/district-codes.js?v=20261012anchor"></script>
+  <script src="/js/env-stations.js?v=20261012anchor"></script>
   <script src="/js/models/warnings.js?v=20261009env"></script>
   <script src="/js/models/auth.js?v=20261009full"></script>
-  <script src="/js/views/calendar-view.js?v=20260908ok"></script>
-  <script src="/js/views/admin-view.js?v=20261009yellow"></script>
-  <script src="/js/controllers/admin.js?v=20261012envgold"></script>
+  <script src="/js/views/calendar-view.js?v=20261012envcal"></script>
+  <script src="/js/views/admin-view.js?v=20261012codecolor"></script>
+  <script src="/js/controllers/admin.js?v=20261012anchor"></script>
 </body>
 </html>

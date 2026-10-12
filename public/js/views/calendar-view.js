@@ -126,10 +126,13 @@ function renderCalendar() {
       // Next/prev month days stay clickable (not "disabled grey").
       btn.className += ' bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800';
     } else if (isSelected) {
+      btn.dataset.state = 'selected';
       btn.className += ' bg-[#1E4B8E] font-semibold text-white shadow-sm shadow-[#1E4B8E]/35';
     } else if (isToday) {
+      btn.dataset.state = 'today';
       btn.className += ' bg-[#EEF4FB] font-semibold text-[#1E4B8E] hover:bg-[#D7E6F6]';
     } else if (isFuture) {
+      btn.dataset.state = 'future';
       btn.className += ' bg-transparent text-slate-800 hover:bg-[#EEF4FB] hover:text-[#1E4B8E]';
     } else {
       btn.className += ' bg-transparent text-slate-700 hover:bg-slate-100';

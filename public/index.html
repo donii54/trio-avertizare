@@ -176,6 +176,13 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
 
     html.kind-env body { background-color: #F4FBF6 !important; }
     html.kind-env .widget { background-color: #E5F6EA !important; }
+    html.kind-env:not(.embed) .widget,
+    html.kind-env:not(.embed) .map-wrap,
+    html.kind-env:not(.embed) #map,
+    html.kind-env:not(.embed) #map.leaflet-container {
+      background: #fff !important;
+      background-color: #fff !important;
+    }
     html.kind-env .text-brand-600 { color: #2F7A4A !important; }
     html.kind-env .text-brand-700 { color: #1F5C36 !important; }
     html.kind-env .bg-brand-600 { background-color: #B7E0C4 !important; color: #1B4D32 !important; }
@@ -366,9 +373,9 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
   </div>
 
   <!-- ── Scripts (model → controller) ─────────────────────────────────── -->
-  <script src="/js/district-codes.js"></script>
-  <script src="/js/env-stations.js?v=20261012singerei12"></script>
+  <script src="/js/district-codes.js?v=20261012anchor"></script>
+  <script src="/js/env-stations.js?v=20261012anchor"></script>
   <script src="/js/models/warnings.js?v=20261009env"></script>
-  <script src="/js/controllers/public-map.js?v=20261012homekind"></script>
+  <script src="/js/controllers/public-map.js?v=20261012greentext"></script>
 </body>
 </html>

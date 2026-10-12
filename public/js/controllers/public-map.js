@@ -91,6 +91,12 @@ function warningCardHtml(item, index, isSelected) {
 function renderPopupToggleButton(count) {
   const btn = document.getElementById('open-popup-btn');
   if (!btn) return;
+  if (!IS_EMBED) {
+    btn.disabled = false;
+    btn.textContent = 'Descarcă harta';
+    btn.onclick = downloadMapScreenshot;
+    return;
+  }
   btn.disabled    = count === 0;
   btn.textContent = count > 0 ? 'Deschide popup' : 'Nu există avertizări';
 }
@@ -230,6 +236,197 @@ function downloadTransparentMap() {
   const link = document.createElement('a');
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
   link.download = `harta-avertizari-${stamp}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function downloadMapScreenshot() {
+  if (!publicMap || !publicGeojsonLayer) return;
+
+  const crs = L.CRS.EPSG3857;
+  const zoom = 12;
+  const shapes = [];
+  const roads = [];
+  const labels = [];
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  function project(ll) {
+    const p = crs.latLngToPoint(L.latLng(ll.lat, ll.lng), zoom);
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+    return p;
+  }
+
+  function projectRing(latlngs) {
+    return latlngs.map(project);
+  }
+
+  function addPolygon(layer, kind) {
+    const rings = walkLatLngRings(layer.getLatLngs()).map(projectRing).filter(ring => ring.length > 2);
+    if (!rings.length) return;
+    shapes.push({
+      kind,
+      rings,
+      fill: layer.options.fillColor || ENV_LAND_FILL,
+      fillOpacity: layer.options.fillOpacity == null ? 1 : layer.options.fillOpacity,
+      stroke: layer.options.color || ENV_LAND_EDGE,
+      weight: layer.options.weight || 1,
+    });
+  }
+
+  publicMap.eachLayer(layer => {
+    if (layer === publicGeojsonLayer || !layer.eachLayer) return;
+    if (layer.options && layer.options.pane === 'envRoads') {
+      layer.eachLayer(line => {
+        if (!line.getLatLngs) return;
+        const parts = [];
+        walkLatLngRings(line.getLatLngs()).forEach(ring => {
+          // Roads are lines; walkLatLngRings only keeps point rings.
+          if (ring.length > 1) parts.push(projectRing(ring));
+        });
+        if (!parts.length) return;
+        roads.push({
+          parts,
+          stroke: line.options.color || '#B7C0BB',
+          weight: line.options.weight || 1.2,
+          opacity: line.options.opacity == null ? 1 : line.options.opacity,
+        });
+      });
+      return;
+    }
+    layer.eachLayer(child => {
+      if (!child.getLatLngs || child.getRadius) return;
+      if (child.options && child.options.fill === false) return;
+      addPolygon(child, 'outline');
+    });
+  });
+
+  publicGeojsonLayer.eachLayer(layer => {
+    if (!layer.getLatLngs) return;
+    addPolygon(layer, 'district');
+    const text = layer.feature && layer.feature.properties && layer.feature.properties._label;
+    if (!text || !layer.getBounds) return;
+    let center = null;
+    if (typeof layer.getCenter === 'function') {
+      try { center = layer.getCenter(); } catch (e) { center = null; }
+    }
+    if (!center || !Number.isFinite(center.lat)) center = layer.getBounds().getCenter();
+    const shapeName = layer.feature.properties.shapeName
+      || layer.feature.properties.NAME
+      || layer.feature.properties.name
+      || '';
+    const offset = warningKind() === 'env'
+      ? envLabelOffset(shapeName)
+      : (typeof meteoLabelOffset === 'function' ? meteoLabelOffset(shapeName) : [0, 0]);
+    const screenPt = publicMap.latLngToContainerPoint(center);
+    const shifted = publicMap.containerPointToLatLng(L.point(
+      screenPt.x + (offset[0] || 0),
+      screenPt.y + (offset[1] || 0)
+    ));
+    labels.push({ text, pt: project(shifted) });
+  });
+
+  if (!Number.isFinite(minX) || !shapes.length) return;
+
+  const contentW = Math.max(maxX - minX, 1);
+  const contentH = Math.max(maxY - minY, 1);
+  const target = 3400;
+  const fit = Math.min(target / contentW, target / contentH);
+  const screenBounds = publicGeojsonLayer.getBounds();
+  const screenNW = publicMap.latLngToContainerPoint(screenBounds.getNorthWest());
+  const screenSE = publicMap.latLngToContainerPoint(screenBounds.getSouthEast());
+  const screenSpan = Math.max(Math.abs(screenSE.x - screenNW.x), Math.abs(screenSE.y - screenNW.y), 1);
+  const lineScale = Math.max(contentW, contentH) * fit / screenSpan;
+  const pad = 96;
+  const outW = Math.round(contentW * fit + pad * 2);
+  const outH = Math.round(contentH * fit + pad * 2);
+  const canvas = document.createElement('canvas');
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext('2d', { alpha: true });
+  ctx.clearRect(0, 0, outW, outH);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  function toCanvas(p) {
+    return {
+      x: pad + (p.x - minX) * fit,
+      y: pad + (p.y - minY) * fit,
+    };
+  }
+
+  function traceRing(ring) {
+    ring.forEach((p, i) => {
+      const c = toCanvas(p);
+      if (i === 0) ctx.moveTo(c.x, c.y);
+      else ctx.lineTo(c.x, c.y);
+    });
+    ctx.closePath();
+  }
+
+  shapes.forEach(item => {
+    ctx.beginPath();
+    item.rings.forEach(traceRing);
+    ctx.globalAlpha = item.fillOpacity;
+    ctx.fillStyle = item.fill;
+    ctx.fill('evenodd');
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = item.stroke;
+    ctx.lineWidth = Math.max(1.5, item.weight * lineScale);
+    ctx.stroke();
+  });
+
+  roads.forEach(road => {
+    ctx.beginPath();
+    road.parts.forEach(part => {
+      part.forEach((p, i) => {
+        const c = toCanvas(p);
+        if (i === 0) ctx.moveTo(c.x, c.y);
+        else ctx.lineTo(c.x, c.y);
+      });
+    });
+    ctx.globalAlpha = road.opacity;
+    ctx.strokeStyle = road.stroke;
+    ctx.lineWidth = Math.max(1.25, road.weight * lineScale);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+
+  Object.values(envPublicMarkers).forEach(marker => {
+    const c = toCanvas(project(marker.getLatLng()));
+    const radius = Math.max(8, marker.getRadius() * lineScale);
+    const weight = Math.max(3, (marker.options.weight || 5) * lineScale);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = marker.options.fillColor || '#28D762';
+    ctx.fill();
+    ctx.lineWidth = weight;
+    ctx.strokeStyle = marker.options.color || '#ffffff';
+    ctx.stroke();
+  });
+
+  const fontPx = Math.max(22, 11 * lineScale);
+  ctx.font = `700 ${fontPx}px Inter, Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(4, fontPx * 0.22);
+  labels.forEach(item => {
+    const c = toCanvas(item.pt);
+    ctx.strokeStyle = '#ffffff';
+    ctx.strokeText(item.text, c.x, c.y);
+    ctx.fillStyle = '#14532d';
+    ctx.fillText(item.text, c.x, c.y);
+  });
+
+  const link = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  link.download = `${warningKind() === 'env' ? 'harta-mediu' : 'harta-meteo'}-${stamp}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
@@ -426,8 +623,12 @@ function initPublicMap() {
           const fullName = feature.properties.shapeName || feature.properties.NAME || feature.properties.name || '???';
           const label    = envMap ? envPlaceName(fullName) : districtLabel(fullName);
           layer.feature.properties._label = label;
+          if (typeof largestPartCenter === 'function') {
+            const anchor = largestPartCenter(layer);
+            layer.getCenter = () => anchor;
+          }
           if (!IS_MAP_WIDGET && label) {
-            layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label', offset: envMap ? envLabelOffset(fullName) : [0, 0] });
+            layer.bindTooltip(label, { permanent: true, direction: 'center', className: 'district-label', offset: envMap ? envLabelOffset(fullName) : meteoLabelOffset(fullName) });
           }
 
           layer.on({
@@ -535,6 +736,7 @@ function applyPublicKindChrome() {
   });
   const homeLink = document.querySelector('[data-home-link]');
   if (homeLink) homeLink.setAttribute('href', '/home?kind=' + warningKind());
+  renderPopupToggleButton(0);
   if (warningKind() !== 'env') return;
   document.title = 'Avertizări de mediu — Moldova';
   const crumb = document.getElementById('crumb-current');

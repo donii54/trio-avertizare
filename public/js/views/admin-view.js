@@ -103,7 +103,7 @@ function closeAdminPopup(e) {
 
 function renderCodeBlock(codeToAdd) {
   const div = document.createElement('div');
-  div.className    = 'code-block';
+  div.className    = 'code-block ' + codeBorderClass(codeToAdd);
   div.dataset.code = codeToAdd;
 
   div.innerHTML = `

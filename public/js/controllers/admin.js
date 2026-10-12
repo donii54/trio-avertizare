@@ -42,6 +42,38 @@ const PHENOMENA = [
 ];
 
 // ── Map state ─────────────────────────────────────────────────────────────────
+let dialogResolve = null;
+
+function openAdminDialog({ message, ok = 'OK', cancel = '' }) {
+  const root = document.getElementById('admin-dialog');
+  document.getElementById('admin-dialog-text').textContent = message;
+  const okBtn = document.getElementById('admin-dialog-ok');
+  const cancelBtn = document.getElementById('admin-dialog-cancel');
+  okBtn.textContent = ok;
+  cancelBtn.hidden = !cancel;
+  if (cancel) cancelBtn.textContent = cancel;
+  if (dialogResolve) dialogResolve(false);
+  root.hidden = false;
+  okBtn.focus();
+  return new Promise(resolve => { dialogResolve = resolve; });
+}
+
+function closeAdminDialog(result) {
+  const root = document.getElementById('admin-dialog');
+  if (root) root.hidden = true;
+  const resolve = dialogResolve;
+  dialogResolve = null;
+  if (resolve) resolve(result);
+}
+
+function showNotice(message) {
+  return openAdminDialog({ message });
+}
+
+function askConfirm(message) {
+  return openAdminDialog({ message, cancel: 'Anulează' });
+}
+
 let adminMap       = null;
 let geojsonLayer   = null;
 let currentColor   = '#FFFF00';
@@ -85,7 +117,6 @@ function prepareEditorForm() {
   setDateField('intervalFrom', '');
   setDateField('intervalTo', '');
   document.getElementById('codes-container').innerHTML = '';
-  addCodeBlock('COD GALBEN');
   updateAddButton();
 
   const now = new Date();
@@ -110,6 +141,8 @@ function fillPhenomena() {
 
 function applyAdminKindChrome() {
   document.body.classList.toggle('kind-env', warningKind() === 'env');
+  const home = document.getElementById('admin-home');
+  if (home) home.href = '/home?kind=' + warningKind();
   if (warningKind() !== 'env') return;
   document.title = 'Avertizări de mediu — Administrare';
   const title = document.getElementById('admin-title');
@@ -119,7 +152,7 @@ function applyAdminKindChrome() {
   const popupTitle = document.getElementById('admin-popup-title');
   if (popupTitle) popupTitle.textContent = '⚠️ AVERTIZĂRI DE MEDIU';
   const hint = document.querySelector('.paint-hint');
-  if (hint) hint.textContent = 'Click pe un cerc pentru a schimba culoarea. Verde resetează cercul.';
+  if (hint) hint.textContent = 'Dublu-click pentru a colora un cerc. Shift + click pentru mai multe cercuri.';
   const paintAll = document.querySelector('.btn-paint-all');
   if (paintAll) paintAll.textContent = 'Colorează toate cercurile';
 }
@@ -142,14 +175,14 @@ function updateSendButton() {
 function addCodeBlock(preferredCode = null) {
   const container = document.getElementById('codes-container');
   const existing  = Array.from(container.querySelectorAll('.code-block'));
-  if (existing.length >= 3) { alert('Poți adăuga maximum 3 coduri'); return; }
+  if (existing.length >= 3) { showNotice('Poți adăuga maximum 3 coduri'); return; }
 
   const usedCodes = existing.map(b => b.querySelector('select').value);
   let codeToAdd = preferredCode;
   if (!codeToAdd || usedCodes.includes(codeToAdd) || !CODE_ORDER.includes(codeToAdd)) {
     codeToAdd = CODE_ORDER.find(c => !usedCodes.includes(c));
   }
-  if (!codeToAdd) { alert('Toate codurile au fost deja adăugate'); return; }
+  if (!codeToAdd) { showNotice('Toate codurile au fost deja adăugate'); return; }
 
   container.appendChild(renderCodeBlock(codeToAdd));
   sortCodeBlocks();
@@ -164,14 +197,19 @@ function onCodeChange(select) {
     .filter(b => b !== block)
     .some(b => b.querySelector('select').value === newCode);
 
-  if (alreadyUsed) { alert('Acest cod este deja folosit'); select.value = block.dataset.code; return; }
+  if (alreadyUsed) { showNotice('Acest cod este deja folosit'); select.value = block.dataset.code; return; }
   block.dataset.code = newCode;
+  block.classList.remove('yellow', 'orange', 'red', 'green');
+  block.classList.add(codeBorderClass(newCode));
   block.querySelector('.code-dot').style.background = CODE_COLORS[newCode];
   sortCodeBlocks();
 }
 
 function removeCodeBlock(btn) {
-  btn.closest('.code-block').remove();
+  const block = btn.closest('.code-block');
+  const color = CODE_COLORS[block.querySelector('select').value];
+  if (color) clearPaintedColor(color);
+  block.remove();
   sortCodeBlocks();
   updateAddButton();
 }
@@ -182,6 +220,14 @@ function sortCodeBlocks() {
   blocks
     .sort((a, b) => CODE_ORDER.indexOf(a.querySelector('select').value) - CODE_ORDER.indexOf(b.querySelector('select').value))
     .forEach(b => container.appendChild(b));
+}
+
+function ensureCodeBlockForColor(color) {
+  const code = Object.keys(CODE_COLORS).find(name => CODE_COLORS[name] === color);
+  if (!code) return;
+  const used = Array.from(document.querySelectorAll('.code-block'))
+    .some(block => block.querySelector('select').value === code);
+  if (!used) addCodeBlock(code);
 }
 
 // ── Map ───────────────────────────────────────────────────────────────────────
@@ -209,6 +255,7 @@ function setDistrictColor(layer, color) {
   layer.setStyle({ fillColor: color, fillOpacity: 0.85, weight: 1.5, color: '#334155' });
   districtData[id] = { name: fullName, label, color };
   updateCount();
+  ensureCodeBlockForColor(color);
 }
 
 function paintDistrict(layer, toggle) {
@@ -220,13 +267,17 @@ function paintDistrict(layer, toggle) {
 
 const envAdminMarkers = {};
 
-function paintEnvStation(id) {
+function paintEnvStation(id, toggle) {
   const marker = envAdminMarkers[id];
   if (!marker) return;
-  if (currentColor === NORMAL_COLOR) delete districtData[id];
-  else districtData[id] = { name: id, label: ENV_STATIONS[id].label, color: currentColor };
+  if (currentColor === NORMAL_COLOR || (toggle && districtData[id]?.color === currentColor)) {
+    delete districtData[id];
+  } else {
+    districtData[id] = { name: id, label: ENV_STATIONS[id].label, color: currentColor };
+  }
   marker.setStyle(envMarkerOptions(districtData[id]?.color || NORMAL_COLOR));
   updateCount();
+  if (districtData[id]?.color) ensureCodeBlockForColor(districtData[id].color);
 }
 
 function addEnvAdminMarkers() {
@@ -236,8 +287,14 @@ function addEnvAdminMarkers() {
       permanent: true, direction: 'bottom', offset: [0, 6], className: 'district-label',
     });
     marker.on('click', event => {
+      if (!event.originalEvent?.shiftKey) return;
       L.DomEvent.stop(event);
-      paintEnvStation(id);
+      paintEnvStation(id, false);
+    });
+    marker.on('dblclick', event => {
+      if (event.originalEvent?.shiftKey) return;
+      L.DomEvent.stop(event);
+      paintEnvStation(id, true);
     });
     envAdminMarkers[id] = marker;
   });
@@ -262,6 +319,24 @@ function resetMapColors() {
   }
   if (geojsonLayer) geojsonLayer.eachLayer(l => geojsonLayer.resetStyle(l));
   updateCount();
+}
+
+function clearPaintedColor(color) {
+  if (warningKind() === 'env') {
+    Object.keys(districtData).forEach(id => {
+      if (districtData[id]?.color !== color) return;
+      delete districtData[id];
+      if (envAdminMarkers[id]) envAdminMarkers[id].setStyle(envMarkerOptions(NORMAL_COLOR));
+    });
+    updateCount();
+    return;
+  }
+  if (!geojsonLayer) return;
+  geojsonLayer.eachLayer(layer => {
+    const id = getId(layer.feature);
+    if (districtData[id]?.color === color) setDistrictColor(layer, NORMAL_COLOR);
+  });
+  if (typeof geojsonLayer.redraw === 'function') geojsonLayer.redraw();
 }
 
 function updateCount() {
@@ -304,11 +379,15 @@ function initAdminMap() {
           const label    = envMap ? envPlaceName(fullName) : districtLabel(fullName);
           layer.feature.properties._name  = fullName;
           layer.feature.properties._label = label;
+          if (typeof largestPartCenter === 'function') {
+            const anchor = largestPartCenter(layer);
+            layer.getCenter = () => anchor;
+          }
           if (label) layer.bindTooltip(label, {
             permanent: true,
             direction: 'center',
             className: 'district-label',
-            offset: envMap ? envLabelOffset(fullName) : districtLabelOffset(fullName),
+            offset: envMap ? envLabelOffset(fullName) : meteoLabelOffset(fullName),
           });
 
           layer.on({
@@ -341,7 +420,7 @@ function initAdminMap() {
       }
       setTimeout(refreshMapSize, 50);
     })
-    .catch(err => { alert('Nu s-a putut încărca harta.'); console.error(err); });
+    .catch(err => { showNotice('Nu s-a putut încărca harta.'); console.error(err); });
 }
 
 // ── Submit ────────────────────────────────────────────────────────────────────
@@ -349,7 +428,7 @@ function validatePaintedCodes(codes) {
   const districts    = paintedDistricts();
   const codeColorSet = codes.map(c => CODE_COLORS[c]).filter(Boolean);
   if (!districts.length || !districts.some(d => codeColorSet.includes(d.color))) {
-    alert(warningKind() === 'env'
+    showNotice(warningKind() === 'env'
       ? 'Colorează cel puțin un cerc cu culoarea codului selectat'
       : 'Colorează cel puțin un raion cu culoarea codului selectat');
     return false;
@@ -390,11 +469,11 @@ async function sendToServer() {
       mapImage: canvas.toDataURL('image/png'),
     });
 
-    alert('Trimis!');
+    await showNotice('Trimis!');
     showList();
   } catch (err) {
     console.error(err);
-    alert('Eroare: ' + err.message);
+    await showNotice('Eroare: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = 'Trimite pe server';
@@ -405,7 +484,7 @@ async function sendToServer() {
 // ── Warning CRUD ──────────────────────────────────────────────────────────────
 async function onDeleteWarning(event, id) {
   event.stopPropagation();
-  if (!confirm('Stergere avertizare?')) return;
+  if (!await askConfirm('Stergere avertizare?')) return;
   await deleteWarning(id);
   closeAdminPopup();
   loadAndRenderWarnings();
@@ -414,7 +493,7 @@ async function onDeleteWarning(event, id) {
 async function clearAllWarnings() {
   const data = await getWarnings();
   if (!data.length) return;
-  if (!confirm('Șterge toate avertizările?')) return;
+  if (!await askConfirm('Șterge toate avertizările?')) return;
   await clearWarnings();
   loadAndRenderWarnings();
 }
@@ -450,13 +529,23 @@ async function startAdmin() {
   document.getElementById('cal-hour').addEventListener('change', commitCalendarValue);
   document.getElementById('cal-minute').addEventListener('change', commitCalendarValue);
 
+  document.getElementById('admin-dialog-ok').addEventListener('click', () => closeAdminDialog(true));
+  document.getElementById('admin-dialog-cancel').addEventListener('click', () => closeAdminDialog(false));
+  document.getElementById('admin-dialog').addEventListener('click', event => {
+    if (event.target.id === 'admin-dialog') closeAdminDialog(false);
+  });
+
   document.addEventListener('mousedown', event => {
     const pop = document.getElementById('calendar-popover');
     if (pop.classList.contains('hidden')) return;
     if (pop.contains(event.target) || event.target.closest('.date-trigger')) return;
     closeCalendar(true);
   });
-  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeCalendar(true); });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (!document.getElementById('admin-dialog').hidden) { closeAdminDialog(false); return; }
+    closeCalendar(true);
+  });
 
   // After a successful login the editor opens immediately.
   // Direct visits to /admin without #editor still land on the saved-warning list.
