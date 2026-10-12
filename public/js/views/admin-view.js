@@ -4,7 +4,7 @@
  */
 
 const CODE_COLORS = {
-  'COD GALBEN':    '#FFED00',
+  'COD GALBEN':    '#FFFF00',
   'COD PORTOCALIU': '#FF8A00',
   'COD ROȘU':     '#FF0000',
 };
@@ -28,11 +28,11 @@ function codeBorderClass(code) {
 }
 
 function codeColor(code) {
-  if (!code) return '#FFED00';
+  if (!code) return '#FFFF00';
   if (code.includes('PORTOCALIU')) return '#FF8A00';
   if (code.includes('ROȘU'))      return '#FF0000';
   if (code.includes('VERDE'))     return '#28D762';
-  return '#FFED00';
+  return '#FFFF00';
 }
 
 function formatWarningDate(emitDate) {

@@ -44,7 +44,7 @@ const PHENOMENA = [
 // ── Map state ─────────────────────────────────────────────────────────────────
 let adminMap       = null;
 let geojsonLayer   = null;
-let currentColor   = '#FFED00';
+let currentColor   = '#FFFF00';
 const districtData = {};
 
 // ── View transitions ──────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ function prepareEditorForm() {
   document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
   const yellowBtn = document.querySelector('.color-btn.yellow');
   if (yellowBtn) yellowBtn.classList.add('active');
-  currentColor = '#FFED00';
+  currentColor = '#FFFF00';
 
   resetMapColors();
   updateSendButton();

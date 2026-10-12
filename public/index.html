@@ -43,7 +43,7 @@ if (location.search.indexOf("embed=1") !== -1) document.documentElement.classLis
         extend: {
           colors: {
             brand: { 50: '#EEF4FB', 100: '#D7E6F6', 200: '#B7D2EE', 600: '#1E4B8E', 700: '#163A6E', 900: '#0F2749' },
-            code:  { yellow: '#FFED00', orange: '#FF8A00', red: '#FF0000', green: '#28D762' }
+            code:  { yellow: '#FFFF00', orange: '#FF8A00', red: '#FF0000', green: '#28D762' }
           },
           fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
           borderRadius: { widget: '16px' }
@@ -267,7 +267,7 @@ if (location.search.indexOf("embed=1") !== -1) document.documentElement.classLis
           <div class="mb-4 flex items-center justify-between gap-3">
             <ul class="flex flex-col gap-3 text-[15px] font-medium text-brand-600">
               <li class="flex items-center gap-3"><span class="legend-dot" style="background:#28D762"></span> scăzut</li>
-              <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FFED00"></span> mediu</li>
+              <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FFFF00"></span> mediu</li>
               <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FF8A00"></span> ridicat</li>
               <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FF0000"></span> foarte mare</li>
             </ul>
@@ -288,7 +288,7 @@ if (location.search.indexOf("embed=1") !== -1) document.documentElement.classLis
   <div id="overlay" class="fixed inset-0 z-[1000] hidden items-center justify-center bg-slate-900/60 p-4" onclick="closePopup(event)">
     <div class="relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" onclick="event.stopPropagation()">
       <div class="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-white px-6 py-4">
-        <svg class="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="#FFED00" xmlns="http://www.w3.org/2000/svg">
+        <svg class="h-6 w-6 shrink-0" viewBox="0 0 24 24" fill="#FFFF00" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 3.2 2.4 20.4h19.2L12 3.2z"/>
           <path d="M12 9.2v5.4" stroke="#111827" stroke-width="1.8" stroke-linecap="round"/>
           <circle cx="12" cy="16.8" r="1" fill="#111827"/>
@@ -302,7 +302,7 @@ if (location.search.indexOf("embed=1") !== -1) document.documentElement.classLis
         <div class="flex flex-wrap gap-x-5 gap-y-1 text-xs font-bold text-slate-600">
           <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FF0000"></span>COD ROȘU</span>
           <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FF8A00"></span>COD PORTOCALIU</span>
-          <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FFED00;border:1px solid #d4a900"></span>COD GALBEN</span>
+          <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#FFFF00;border:1px solid #d4a900"></span>COD GALBEN</span>
           <span class="flex items-center gap-1.5"><span class="inline-block h-3 w-3 rounded-full" style="background:#28D762"></span>FĂRĂ COD</span>
         </div>
         <p class="mt-1.5 text-[11px] italic text-slate-400">Notă: Informația are caracter informativ. În cazul pericolului iminent se vor emite avertizări actualizate.</p>
@@ -312,8 +312,8 @@ if (location.search.indexOf("embed=1") !== -1) document.documentElement.classLis
 
   <!-- ── Scripts (model → controller) ─────────────────────────────────── -->
   <script src="/js/district-codes.js"></script>
-  <script src="/js/env-stations.js?v=20261009x2"></script>
+  <script src="/js/env-stations.js?v=20261012radius"></script>
   <script src="/js/models/warnings.js?v=20261009env"></script>
-  <script src="/js/controllers/public-map.js?v=20261009soft2"></script>
+  <script src="/js/controllers/public-map.js?v=20261012r25"></script>
 </body>
 </html>

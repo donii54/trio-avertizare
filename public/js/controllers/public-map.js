@@ -48,7 +48,7 @@ function colorRank(color) {
   const v = color.toLowerCase();
   if (v.includes('ff0000')) return 4;
   if (v.includes('ff8a00')) return 3;
-  if (v.includes('ffed00')) return 2;
+  if (v.includes('ffff00') || v.includes('ffed00') || v.includes('fce636')) return 2;
   if (v.includes('28d762')) return 1;
   return 0;
 }
@@ -57,7 +57,7 @@ function codeMeta(code) {
   if (code.includes('ROȘU'))       return { color: '#FF0000', box: 'bg-red-50 border-red-200',     title: 'text-red-800' };
   if (code.includes('PORTOCALIU')) return { color: '#FF8A00', box: 'bg-orange-50 border-orange-200', title: 'text-orange-800' };
   if (code.includes('VERDE'))      return { color: '#28D762', box: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-800' };
-  return { color: '#FFED00', box: 'bg-amber-50 border-amber-200', title: 'text-amber-800' };
+  return { color: '#FFFF00', box: 'bg-amber-50 border-amber-200', title: 'text-amber-800' };
 }
 
 // ── Side panel rendering ──────────────────────────────────────────────────────
@@ -252,7 +252,7 @@ function alertBlockHtml(item, index) {
   const badges = (item.codes||[]).map(c => {
     const m = codeMeta(c.code);
     return `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                  style="background:${m.color};color:${m.color==='#FFED00'?'#78350f':'#fff'}">${escapeHtmlPublic(c.code)}</span>`;
+                  style="background:${m.color};color:${m.color==='#FFFF00'?'#78350f':'#fff'}">${escapeHtmlPublic(c.code)}</span>`;
   }).join('');
 
   const footer = (item.codes||[]).map(c => {
@@ -320,7 +320,8 @@ function restoreLayer(layer) {
   const label = layer.feature.properties._label;
   const found = districtWarnings[name] || districtWarnings[label];
   if (found?.color) {
-    layer.setStyle({ fillColor: found.color, fillOpacity: 0.9, color: '#ffffff', weight: 1.3 });
+    const fill = /ffed00|fce636/i.test(found.color) ? '#FFFF00' : found.color;
+    layer.setStyle({ fillColor: fill, fillOpacity: 0.9, color: '#ffffff', weight: 1.3 });
   } else {
     publicGeojsonLayer.resetStyle(layer);
   }
@@ -347,12 +348,12 @@ const envPublicMarkers = {};
 
 function envPublicRadius() {
   if (IS_MAP_WIDGET || window.self !== window.top || window.innerWidth < 901) return 14;
-  return 28;
+  return 25;
 }
 
 function resizeEnvPublicCircles() {
   const radius = envPublicRadius();
-  const weight = radius >= 80 ? 10 : (radius > 22 ? 5 : 4);
+  const weight = radius >= 80 ? 10 : (radius >= 22 ? 5 : 4);
   Object.values(envPublicMarkers).forEach(marker => marker.setStyle({ radius, weight }));
 }
 

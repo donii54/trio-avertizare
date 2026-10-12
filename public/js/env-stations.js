@@ -102,7 +102,7 @@ function envLevelClass(color) {
   if (!value || value === '#28d762' || value === '#53ad55') return '';
   if (value.includes('ff0000') || value.includes('d81833')) return 'warning';
   if (value.includes('ff8a00') || value.includes('d86204')) return 'watch';
-  if (value.includes('ffed00') || value.includes('fce636')) return 'advisory';
+  if (value.includes('ffff00') || value.includes('ffed00') || value.includes('fce636')) return 'advisory';
   return '';
 }
 
@@ -110,7 +110,7 @@ function envFillColor(color) {
   const level = envLevelClass(color);
   if (level === 'warning') return '#FF0000';
   if (level === 'watch') return '#FF8A00';
-  if (level === 'advisory') return '#FFED00';
+  if (level === 'advisory') return '#FFFF00';
   return '#28D762';
 }
 
@@ -119,7 +119,7 @@ function envMarkerOptions(color, radius) {
   return {
     radius: size,
     color: '#ffffff',
-    weight: size >= 80 ? 10 : (size > 22 ? 5 : 4),
+    weight: size >= 80 ? 10 : (size >= 22 ? 5 : 4),
     opacity: 1,
     fillColor: envFillColor(color),
     fillOpacity: 1,

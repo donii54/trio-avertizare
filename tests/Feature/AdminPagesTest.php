@@ -59,7 +59,7 @@ class AdminPagesTest extends TestCase
             'intervalFrom' => '2026-10-09T10:00',
             'intervalTo' => '2026-10-10T10:00',
             'codes' => [['code' => 'COD GALBEN', 'description' => 'test']],
-            'districts' => [['name' => 'Chișinău', 'label' => 'Chișinău', 'color' => '#FFED00']],
+            'districts' => [['name' => 'Chișinău', 'label' => 'Chișinău', 'color' => '#FFFF00']],
         ];
 
         $this->postJson('/api/warnings', $payload)->assertCreated();
@@ -156,7 +156,7 @@ class AdminPagesTest extends TestCase
             'intervalFrom' => '2026-10-09T10:00',
             'intervalTo' => '2026-10-10T10:00',
             'codes' => [['code' => 'COD GALBEN', 'description' => 'test']],
-            'districts' => [['name' => 'Chișinău', 'label' => 'Chișinău', 'color' => '#FFED00']],
+            'districts' => [['name' => 'Chișinău', 'label' => 'Chișinău', 'color' => '#FFFF00']],
         ];
 
         $this->postJson('/api/warnings', $payload)->assertCreated();
