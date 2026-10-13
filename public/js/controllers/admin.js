@@ -76,7 +76,7 @@ function askConfirm(message) {
 
 let adminMap       = null;
 let geojsonLayer   = null;
-let currentColor   = '#FFFF00';
+let currentColor   = '#FFED00';
 const districtData = {};
 
 // ── View transitions ──────────────────────────────────────────────────────────
@@ -126,7 +126,7 @@ function prepareEditorForm() {
   document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
   const yellowBtn = document.querySelector('.color-btn.yellow');
   if (yellowBtn) yellowBtn.classList.add('active');
-  currentColor = '#FFFF00';
+  currentColor = '#FFED00';
 
   resetMapColors();
   updateSendButton();

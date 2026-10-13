@@ -57,7 +57,7 @@ function codeMeta(code) {
   if (code.includes('ROȘU'))       return { color: '#FF0000', box: 'bg-red-50 border-red-200',     title: 'text-red-800' };
   if (code.includes('PORTOCALIU')) return { color: '#FF8A00', box: 'bg-orange-50 border-orange-200', title: 'text-orange-800' };
   if (code.includes('VERDE'))      return { color: '#28D762', box: 'bg-emerald-50 border-emerald-200', title: 'text-emerald-800' };
-  return { color: '#FFFF00', box: 'bg-amber-50 border-amber-200', title: 'text-amber-800' };
+  return { color: '#FFED00', box: 'bg-amber-50 border-amber-200', title: 'text-amber-800' };
 }
 
 // ── Side panel rendering ──────────────────────────────────────────────────────
@@ -449,7 +449,7 @@ function alertBlockHtml(item, index) {
   const badges = (item.codes||[]).map(c => {
     const m = codeMeta(c.code);
     return `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold"
-                  style="background:${m.color};color:${m.color==='#FFFF00'?'#78350f':'#fff'}">${escapeHtmlPublic(c.code)}</span>`;
+                  style="background:${m.color};color:${/ffff00|ffed00|fce636/i.test(m.color)?'#78350f':'#fff'}">${escapeHtmlPublic(c.code)}</span>`;
   }).join('');
 
   const footer = (item.codes||[]).map(c => {
@@ -517,7 +517,7 @@ function restoreLayer(layer) {
   const label = layer.feature.properties._label;
   const found = districtWarnings[name] || districtWarnings[label];
   if (found?.color) {
-    const fill = /ffed00|fce636/i.test(found.color) ? '#FFFF00' : found.color;
+    const fill = /ffff00|ffed00|fce636/i.test(found.color) ? '#FFED00' : found.color;
     layer.setStyle({ fillColor: fill, fillOpacity: 0.9, color: '#ffffff', weight: 1.3 });
   } else {
     publicGeojsonLayer.resetStyle(layer);

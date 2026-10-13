@@ -331,7 +331,7 @@ body.kind-env #admin-dialog-ok:hover { background: #1f5c36; }
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
   cursor: pointer;
   transition: 0.2s;
-  border-left: 6px solid #FFFF00;
+  border-left: 6px solid #FFED00;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -650,7 +650,7 @@ body.kind-env #calendar-days button[data-state="future"]:hover {
   transform: scale(1.12);
 }
 .color-btn.green  { background: #28D762; }
-.color-btn.yellow { background: #FFFF00; }
+.color-btn.yellow { background: #FFED00; }
 .color-btn.orange { background: #FF8A00; }
 .color-btn.red    { background: #FF0000; }
 

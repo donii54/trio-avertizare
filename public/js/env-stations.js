@@ -114,7 +114,7 @@ function envFillColor(color) {
   const level = envLevelClass(color);
   if (level === 'warning') return '#FF0000';
   if (level === 'watch') return '#FF8A00';
-  if (level === 'advisory') return '#FFFF00';
+  if (level === 'advisory') return '#FFED00';
   return '#28D762';
 }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Avertizări Meteorologice — Administrare</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/css/style.css?v=20261012dialog" />
+  <link rel="stylesheet" href="/css/style.css?v=20261013codes" />
   <!-- Tailwind must load before tailwind.config -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { corePlugins: { preflight: false } };</script>
@@ -113,7 +113,7 @@
         <label class="color-label">Culoare pentru umplerea raioanelor</label>
         <div class="colors">
           <div class="color-btn green"  data-color="#28D762" title="Normă — resetează culoarea"></div>
-          <div class="color-btn yellow active" data-color="#FFFF00"></div>
+          <div class="color-btn yellow active" data-color="#FFED00"></div>
           <div class="color-btn orange" data-color="#FF8A00"></div>
           <div class="color-btn red"    data-color="#FF0000"></div>
         </div>
@@ -209,11 +209,11 @@
 
   <!-- ── Scripts (MVC load order: model → view → controller) ──────────── -->
   <script src="/js/district-codes.js?v=20261012anchor"></script>
-  <script src="/js/env-stations.js?v=20261012anchor"></script>
+  <script src="/js/env-stations.js?v=20261013codes"></script>
   <script src="/js/models/warnings.js?v=20261009env"></script>
   <script src="/js/models/auth.js?v=20261009full"></script>
   <script src="/js/views/calendar-view.js?v=20261012envcal"></script>
-  <script src="/js/views/admin-view.js?v=20261012codecolor"></script>
-  <script src="/js/controllers/admin.js?v=20261012anchor"></script>
+  <script src="/js/views/admin-view.js?v=20261013codes"></script>
+  <script src="/js/controllers/admin.js?v=20261013codes"></script>
 </body>
 </html>
