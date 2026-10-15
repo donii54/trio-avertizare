@@ -1080,4 +1080,38 @@ body.kind-hydro #calendar-days button[data-state="future"]:hover {
   background: #ede6f8 !important;
   color: #4c2778 !important;
 }
+body.kind-hydro #editor-view {
+  background: #f6f3fc;
+}
+body.kind-hydro .panel {
+  border-left-color: #e4d6f5;
+  scrollbar-color: #d7c4f0 transparent;
+}
+body.kind-hydro .panel::-webkit-scrollbar-track {
+  background: rgba(107, 63, 160, 0.08);
+}
+body.kind-hydro .panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d7c4f0 0%, #6b3fa0 100%);
+}
+body.kind-hydro .panel::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6b3fa0 0%, #4c2778 100%);
+}
+body.kind-hydro .panel::-webkit-scrollbar-button:single-button {
+  background-color: #f6f3fc;
+  border-color: rgba(107, 63, 160, 0.18);
+}
+body.kind-hydro .panel::-webkit-scrollbar-button:single-button:hover {
+  background-color: #ede6f8;
+  border-color: rgba(107, 63, 160, 0.28);
+}
+body.kind-hydro .btn-back,
+body.kind-hydro .btn-back:hover {
+  color: #6b3fa0;
+}
+body.kind-hydro .btn-send { background: #6b3fa0; }
+body.kind-hydro .btn-send:hover { background: #4c2778; }
+body.kind-hydro .btn-send:disabled,
+body.kind-hydro .btn-send:disabled:hover { background: #c4a8e6; }
+body.kind-hydro .info { background: #f3eefb; }
+body.kind-hydro .color-label { color: #6b3fa0; }
 }
