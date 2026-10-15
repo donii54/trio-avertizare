@@ -40,17 +40,23 @@
       text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
       pointer-events: none;
     }
+    html.kind-hydro .district-label,
+    html.kind-hydro .city-label { color: #4C2778; }
     .city-label { font-weight: 600; }
     @media (max-width: 420px) {
       .district-label, .city-label { font-size: 7px !important; }
     }
   </style>
+  <script>
+    if (location.pathname.indexOf("/hydro") !== -1) document.documentElement.classList.add("kind-hydro");
+  </script>
 </head>
 <body>
   <div id="map"></div>
   <script src="/js/district-codes.js"></script>
   <script src="/js/env-stations.js?v=20261012singerei12"></script>
-  <script src="/js/models/warnings.js?v=20261009env"></script>
-  <script src="/js/controllers/public-map.js?v=20261012singerei"></script>
+  <script src="/js/hydro-map.js?v=20261015blue"></script>
+  <script src="/js/models/warnings.js?v=20261015hydro"></script>
+  <script src="/js/controllers/public-map.js?v=20261015blue"></script>
 </body>
 </html>

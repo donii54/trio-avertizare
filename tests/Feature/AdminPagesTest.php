@@ -31,6 +31,7 @@ class AdminPagesTest extends TestCase
     {
         $this->get('/admin')->assertRedirect('/login?next=/admin');
         $this->get('/admin/environmental')->assertRedirect('/login?next=/admin/environmental');
+        $this->get('/admin/hydro')->assertRedirect('/login?next=/admin/hydro');
     }
 
     public function test_environmental_page_is_public(): void
@@ -149,6 +150,7 @@ class AdminPagesTest extends TestCase
 
         $this->get('/admin')->assertOk()->assertSee('id="editor-view"', false);
         $this->get('/admin/environmental')->assertOk()->assertSee('id="editor-view"', false);
+        $this->get('/admin/hydro')->assertOk()->assertSee('id="editor-view"', false);
 
         $payload = [
             'phenomenon' => 'Caniculă',
@@ -164,5 +166,20 @@ class AdminPagesTest extends TestCase
             'kind' => 'env',
             'phenomenon' => 'Impactul poluarii aerului',
         ]))->assertCreated();
+        $this->postJson('/api/warnings', array_merge($payload, [
+            'kind' => 'hydro',
+            'phenomenon' => 'Avertizare hidrologică',
+            'districts' => [['name' => 'Botna', 'label' => 'Botna', 'color' => '#FFED00']],
+        ]))->assertCreated();
+    }
+
+    public function test_hydro_page_is_public(): void
+    {
+        $this->get('/hydro')
+            ->assertOk()
+            ->assertSee('data-kind-tab="hydro"', false)
+            ->assertSee('hydro-map.js', false);
+
+        $this->get('/hydro/widget')->assertOk();
     }
 }

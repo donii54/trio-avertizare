@@ -146,6 +146,22 @@
     body.kind-env code { background: #eef8f1; color: var(--brand-dark); }
     body.kind-env .preview,
     body.kind-env .preview iframe { background: #fff; }
+    body.kind-hydro {
+      --bg: #f6f3fc;
+      --panel: #ede6f8;
+      --brand: #6b3fa0;
+      --brand-dark: #4c2778;
+      --line: #e4d6f5;
+      background:
+        radial-gradient(1200px 500px at 10% -10%, #ede6f8 0%, transparent 55%),
+        radial-gradient(900px 420px at 100% 0%, #e4d6f5 0%, transparent 50%),
+        var(--bg);
+    }
+    body.kind-hydro .tab:hover { background: #f3eefb; color: var(--brand); }
+    body.kind-hydro .tab.is-active { background: #d7c4f0; color: #3a215f; }
+    body.kind-hydro code { background: #f3eefb; color: var(--brand-dark); }
+    body.kind-hydro .preview,
+    body.kind-hydro .preview iframe { background: #fff; }
     code {
       background: #eef4fb; color: var(--brand-dark);
       padding: 2px 6px; border-radius: 6px; font-size: 12px;
@@ -165,6 +181,7 @@
     <div class="tabs tabs-main" role="tablist">
       <button class="tab is-active" type="button" data-kind="meteo" role="tab">Meteorologice</button>
       <button class="tab" type="button" data-kind="env" role="tab">Mediu</button>
+      <button class="tab" type="button" data-kind="hydro" role="tab">Hidrologice</button>
     </div>
 
     <section class="panel is-active" id="panel-meteo">
@@ -332,6 +349,83 @@
         </div>
       </div>
     </section>
+
+    <section class="panel" id="panel-hydro">
+      <div class="tabs tabs-sub" role="tablist">
+        <button class="tab" type="button" data-sub="admin" role="tab">Admin</button>
+        <button class="tab is-active" type="button" data-sub="pages" role="tab">Pagini</button>
+        <button class="tab" type="button" data-sub="map" role="tab">Previzualizare hartă</button>
+        <button class="tab" type="button" data-sub="widget" role="tab">Previzualizare widget</button>
+        <button class="tab" type="button" data-sub="links" role="tab">Link-uri utile</button>
+      </div>
+      <div class="subpanel" data-sub="admin">
+        <div class="grid">
+          <a class="card" href="/editor/hydro">
+            <span class="badge">Admin</span>
+            <h2>Administrare hidrologică</h2>
+            <p>Harta sectoarelor de râu și butonul Administrare.</p>
+            <span class="go">Deschide →</span>
+          </a>
+        </div>
+      </div>
+      <div class="subpanel is-active" data-sub="pages">
+        <div class="grid">
+          <a class="card" href="/hydro">
+            <span class="badge">Public</span>
+            <h2>Hartă hidrologică</h2>
+            <p>Sectoarele de râu din șablonul CorelDRAW. Culoarea urmează codul avertizării.</p>
+            <span class="go">Deschide →</span>
+          </a>
+          <a class="card" href="/hydro/widget">
+            <span class="badge">Widget</span>
+            <h2>Widget hidro</h2>
+            <p>Harta râurilor pentru iframe.</p>
+            <span class="go">Deschide →</span>
+          </a>
+          <a class="card" href="/hydro?embed=1">
+            <span class="badge">Embed</span>
+            <h2>Hartă embed</h2>
+            <p>Versiunea fără header, pentru încorporare.</p>
+            <span class="go">Deschide →</span>
+          </a>
+          <a class="card" href="/editor/hydro">
+            <span class="badge">Editor</span>
+            <h2>Editor cu descrieri</h2>
+            <p>Harta activă și lista avertizărilor hidrologice.</p>
+            <span class="go">Deschide →</span>
+          </a>
+        </div>
+      </div>
+      <div class="subpanel preview-map" data-sub="map">
+        <div class="preview">
+          <div class="preview-bar">
+            <strong>Hartă hidrologică</strong>
+            <a href="/hydro" target="_blank" rel="noopener">Deschide în tab nou</a>
+          </div>
+          <iframe data-src="/hydro?embed=1" title="Previzualizare harta hidrologică"></iframe>
+        </div>
+      </div>
+      <div class="subpanel" data-sub="widget">
+        <div class="preview">
+          <div class="preview-bar">
+            <strong>Widget hidrologic</strong>
+            <a href="/hydro/widget" target="_blank" rel="noopener">Deschide în tab nou</a>
+          </div>
+          <iframe data-src="/hydro/widget" title="Previzualizare widget hidrologic" style="height:360px;background:transparent;" allowtransparency="true"></iframe>
+        </div>
+        <p class="note">Notă: Pe hartă sunt menționate doar râurile care sunt monitorizate de către AMM.</p>
+      </div>
+      <div class="subpanel" data-sub="links">
+        <div class="grid">
+          <a class="card" href="/api/warnings?kind=hydro" target="_blank" rel="noopener">
+            <span class="badge">API</span>
+            <h2>/api/warnings?kind=hydro</h2>
+            <p>JSON cu avertizările hidrologice. Nu se amestecă cu cele meteorologice sau de mediu.</p>
+            <span class="go">Deschide JSON →</span>
+          </a>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -356,8 +450,10 @@
         document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('is-active'));
         const panel = document.getElementById('panel-' + tab.dataset.kind);
         panel.classList.add('is-active');
+        const titles = { meteo: 'Meteo', env: 'Mediu', hydro: 'Hidro' };
         document.body.classList.toggle('kind-env', tab.dataset.kind === 'env');
-        document.getElementById('home-title').textContent = tab.dataset.kind === 'env' ? 'Mediu' : 'Meteo';
+        document.body.classList.toggle('kind-hydro', tab.dataset.kind === 'hydro');
+        document.getElementById('home-title').textContent = titles[tab.dataset.kind] || 'Meteo';
         const current = panel.querySelector('.tabs-sub .tab.is-active');
         showSub(panel, current ? current.dataset.sub : 'pages');
       });
@@ -370,7 +466,7 @@
     });
 
     const requestedKind = new URLSearchParams(location.search).get('kind');
-    if (requestedKind === 'env' || requestedKind === 'meteo') {
+    if (requestedKind === 'env' || requestedKind === 'meteo' || requestedKind === 'hydro') {
       const requestedTab = document.querySelector('.tabs-main .tab[data-kind="' + requestedKind + '"]');
       if (requestedTab) requestedTab.click();
     }

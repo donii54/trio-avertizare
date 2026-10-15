@@ -28,7 +28,7 @@ class WarningController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'kind'         => 'sometimes|in:meteo,env',
+            'kind'         => 'sometimes|in:meteo,env,hydro',
             'phenomenon'   => 'required|string|max:255',
             'emitDate'     => 'required|date',
             'intervalFrom' => 'required|date',
@@ -83,7 +83,7 @@ class WarningController extends Controller
     {
         $kind = (string) $request->input('kind', 'meteo');
 
-        return in_array($kind, ['meteo', 'env'], true) ? $kind : 'meteo';
+        return in_array($kind, ['meteo', 'env', 'hydro'], true) ? $kind : 'meteo';
     }
 
     private function sessionKind(Request $request): string
@@ -91,7 +91,7 @@ class WarningController extends Controller
         $admin = AdminUser::find($request->session()->get('admin_id'));
         $kind = $admin->kind ?? 'meteo';
 
-        return in_array($kind, ['meteo', 'env', 'full'], true) ? $kind : 'meteo';
+        return in_array($kind, ['meteo', 'env', 'hydro', 'full'], true) ? $kind : 'meteo';
     }
 
     private function assertSessionKind(Request $request, string $kind): void

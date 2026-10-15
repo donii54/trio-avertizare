@@ -16,7 +16,7 @@ class AuthController extends Controller
         $request->validate([
             'user'     => 'required|string',
             'password' => 'required|string',
-            'kind'     => 'required|in:meteo,env,full',
+            'kind'     => 'required|in:meteo,env,hydro,full',
         ]);
 
         $admin = AdminUser::query()

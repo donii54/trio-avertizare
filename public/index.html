@@ -26,6 +26,7 @@ html.embed .widget > h2 { font-size: 16px !important; margin-bottom: 8px !import
 <script>
 if (location.search.indexOf("embed=1") !== -1) document.documentElement.classList.add("embed");
 if (location.pathname.indexOf("/environmental") === 0) document.documentElement.classList.add("kind-env");
+if (location.pathname.indexOf("/hydro") === 0) document.documentElement.classList.add("kind-hydro");
 </script>
 
   <meta charset="UTF-8">
@@ -234,6 +235,66 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
       border-color: rgba(47, 122, 74, 0.28);
     }
 
+    html.kind-hydro body { background-color: #F6F3FC !important; }
+    html.kind-hydro .widget { background-color: #EDE6F8 !important; }
+    html.kind-hydro:not(.embed) .widget,
+    html.kind-hydro:not(.embed) .map-wrap,
+    html.kind-hydro:not(.embed) #map,
+    html.kind-hydro:not(.embed) #map.leaflet-container {
+      background: #fff !important;
+      background-color: #fff !important;
+    }
+    html.kind-hydro .text-brand-600 { color: #6B3FA0 !important; }
+    html.kind-hydro .text-brand-700 { color: #4C2778 !important; }
+    html.kind-hydro .bg-brand-600 { background-color: #D7C4F0 !important; color: #3A215F !important; }
+    html.kind-hydro .hover\:bg-brand-700:hover { background-color: #C4A8E6 !important; color: #3A215F !important; }
+    html.kind-hydro .hover\:bg-brand-50:hover { background-color: #F3EEFB !important; }
+    html.kind-hydro .ring-brand-200 { --tw-ring-color: #E4D6F5 !important; }
+    html.kind-hydro .ring-brand-100 { --tw-ring-color: #F3EEFB !important; }
+    html.kind-hydro .border-brand-200,
+    html.kind-hydro .hover\:border-brand-200:hover { border-color: #E4D6F5 !important; }
+    html.kind-hydro.embed,
+    html.kind-hydro.embed body,
+    html.kind-hydro.embed .widget { background: #fff !important; background-color: #fff !important; }
+    html.kind-hydro #download-map-btn,
+    html.kind-hydro .download-map-btn {
+      border-color: #E4D6F5 !important;
+      box-shadow: 0 0 0 1px rgba(107, 63, 160, 0.12), 0 4px 12px rgba(107, 63, 160, 0.1) !important;
+    }
+    html.kind-hydro #download-map-btn:hover,
+    html.kind-hydro .download-map-btn:hover {
+      border-color: #C4A8E6 !important;
+      box-shadow: 0 0 0 1px rgba(107, 63, 160, 0.2), 0 6px 16px rgba(107, 63, 160, 0.14) !important;
+    }
+    html.kind-hydro #phenomena-panel,
+    html.kind-hydro #popup-list,
+    html.kind-hydro .info-panel { scrollbar-color: #D7C4F0 transparent; }
+    html.kind-hydro #phenomena-panel::-webkit-scrollbar-track,
+    html.kind-hydro #popup-list::-webkit-scrollbar-track,
+    html.kind-hydro .info-panel::-webkit-scrollbar-track { background: rgba(215, 196, 240, 0.4); }
+    html.kind-hydro #phenomena-panel::-webkit-scrollbar-thumb,
+    html.kind-hydro #popup-list::-webkit-scrollbar-thumb,
+    html.kind-hydro .info-panel::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #F3EEFB 0%, #D7C4F0 100%);
+    }
+    html.kind-hydro #phenomena-panel::-webkit-scrollbar-thumb:hover,
+    html.kind-hydro #popup-list::-webkit-scrollbar-thumb:hover,
+    html.kind-hydro .info-panel::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #D7C4F0 0%, #B794E0 100%);
+    }
+    html.kind-hydro #phenomena-panel::-webkit-scrollbar-button:single-button,
+    html.kind-hydro #popup-list::-webkit-scrollbar-button:single-button,
+    html.kind-hydro .info-panel::-webkit-scrollbar-button:single-button {
+      background-color: #F6F3FC;
+      border-color: rgba(107, 63, 160, 0.18);
+    }
+    html.kind-hydro #phenomena-panel::-webkit-scrollbar-button:single-button:hover,
+    html.kind-hydro #popup-list::-webkit-scrollbar-button:single-button:hover,
+    html.kind-hydro .info-panel::-webkit-scrollbar-button:single-button:hover {
+      background-color: #F3EEFB;
+      border-color: rgba(107, 63, 160, 0.28);
+    }
+
     @media (max-width: 1100px) {
       .info-panel { width: 340px !important; }
     }
@@ -317,6 +378,7 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
       <div class="mt-3 flex flex-wrap gap-2">
         <a href="/" data-kind-tab="meteo" class="rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white">Meteorologice</a>
         <a href="/environmental" data-kind-tab="env" class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-brand-600 ring-1 ring-brand-200">Mediu</a>
+        <a href="/hydro" data-kind-tab="hydro" class="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-brand-600 ring-1 ring-brand-200">Hidrologice</a>
       </div>
     </header>
 
@@ -326,7 +388,7 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
         <div class="map-wrap"><div id="map"></div></div>
         <aside class="info-panel absolute right-0 top-0 z-[500] flex h-full w-[420px] flex-col pl-4">
           <div class="mb-4 flex items-center justify-between gap-3">
-            <ul class="flex flex-col gap-3 text-[15px] font-medium text-brand-600">
+            <ul id="legend-list" class="flex flex-col gap-3 text-[15px] font-medium text-brand-600">
               <li class="flex items-center gap-3"><span class="legend-dot" style="background:#28D762"></span> scăzut</li>
               <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FFED00"></span> mediu</li>
               <li class="flex items-center gap-3"><span class="legend-dot" style="background:#FF8A00"></span> ridicat</li>
@@ -339,6 +401,7 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
               class="download-map-btn hidden shrink-0 rounded-xl bg-brand-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-700"
               onclick="downloadTransparentMap()">Descarcă harta</button>
           </div>
+          <p id="hydro-note" hidden class="mb-3 max-w-[280px] text-[12px] leading-snug text-slate-500">Notă: Pe hartă sunt menționate doar râurile care sunt monitorizate de către AMM</p>
           <div id="phenomena-panel" class="min-h-0 flex-1 overflow-y-auto pr-1"></div>
         </aside>
       </div>
@@ -374,7 +437,8 @@ if (location.pathname.indexOf("/environmental") === 0) document.documentElement.
   <!-- ── Scripts (model → controller) ─────────────────────────────────── -->
   <script src="/js/district-codes.js?v=20261012anchor"></script>
   <script src="/js/env-stations.js?v=20261013codes"></script>
-  <script src="/js/models/warnings.js?v=20261009env"></script>
-  <script src="/js/controllers/public-map.js?v=20261013codes"></script>
+  <script src="/js/hydro-map.js?v=20261015blue"></script>
+  <script src="/js/models/warnings.js?v=20261015hydro"></script>
+  <script src="/js/controllers/public-map.js?v=20261015blue"></script>
 </body>
 </html>

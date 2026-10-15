@@ -8,11 +8,19 @@
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 function warningKind() {
-  if (window.WARNING_KIND === 'env' || window.WARNING_KIND === 'meteo') return window.WARNING_KIND;
+  if (window.WARNING_KIND === 'env' || window.WARNING_KIND === 'meteo' || window.WARNING_KIND === 'hydro') {
+    return window.WARNING_KIND;
+  }
   const path = (location.pathname || '/').replace(/\/+$/, '') || '/';
+  const hydro = path === '/hydro'
+    || path.startsWith('/hydro/')
+    || path.startsWith('/admin/hydro')
+    || path.startsWith('/editor/hydro');
+  if (hydro) return 'hydro';
   const env = path === '/environmental'
     || path.startsWith('/environmental/')
-    || path.startsWith('/admin/environmental');
+    || path.startsWith('/admin/environmental')
+    || path.startsWith('/editor/environmental');
   return env ? 'env' : 'meteo';
 }
 

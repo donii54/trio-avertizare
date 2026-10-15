@@ -76,12 +76,21 @@ function askConfirm(message) {
 
 let adminMap       = null;
 let geojsonLayer   = null;
+let hydroRiverLayer = null;
 let currentColor   = '#FFED00';
 const districtData = {};
 
 // ── View transitions ──────────────────────────────────────────────────────────
 function adminBase() {
-  return warningKind() === 'env' ? '/admin/environmental' : '/admin';
+  if (warningKind() === 'env') return '/admin/environmental';
+  if (warningKind() === 'hydro') return '/admin/hydro';
+  return '/admin';
+}
+
+function phenomenaForKind() {
+  if (warningKind() === 'env') return ENV_PHENOMENA;
+  if (warningKind() === 'hydro') return HYDRO_PHENOMENA;
+  return PHENOMENA;
 }
 
 function showList() {
@@ -112,7 +121,7 @@ async function loadAndRenderWarnings() {
 
 // ── Editor form ───────────────────────────────────────────────────────────────
 function prepareEditorForm() {
-  const phenomena = warningKind() === 'env' ? ENV_PHENOMENA : PHENOMENA;
+  const phenomena = phenomenaForKind();
   document.getElementById('phenomenon').value = phenomena.length === 1 ? phenomena[0] : '';
   setDateField('intervalFrom', '');
   setDateField('intervalTo', '');
@@ -135,14 +144,35 @@ function prepareEditorForm() {
 function fillPhenomena() {
   const select = document.getElementById('phenomenon');
   if (!select || select.options.length > 1) return;
-  const names = warningKind() === 'env' ? ENV_PHENOMENA : PHENOMENA;
+  const names = phenomenaForKind();
   names.forEach(name => select.appendChild(new Option(name, name)));
 }
 
 function applyAdminKindChrome() {
   document.body.classList.toggle('kind-env', warningKind() === 'env');
+  document.body.classList.toggle('kind-hydro', warningKind() === 'hydro');
   const home = document.getElementById('admin-home');
   if (home) home.href = '/home?kind=' + warningKind();
+  if (warningKind() === 'hydro' && !CODE_ORDER.includes('COD VERDE')) {
+    CODE_ORDER.unshift('COD VERDE');
+    CODE_COLORS['COD VERDE'] = '#28D762';
+  }
+  const greenBtn = document.querySelector('.color-btn.green');
+  if (greenBtn && warningKind() === 'hydro') greenBtn.title = 'Cod verde';
+  if (warningKind() === 'hydro') {
+    document.title = 'Avertizări hidrologice — Administrare';
+    const title = document.getElementById('admin-title');
+    if (title) title.textContent = 'Avertizări hidrologice';
+    const editorTitle = document.querySelector('#editor-view h1');
+    if (editorTitle) editorTitle.textContent = 'AVERTIZĂRI HIDROLOGICE';
+    const popupTitle = document.getElementById('admin-popup-title');
+    if (popupTitle) popupTitle.textContent = 'AVERTIZĂRI HIDROLOGICE';
+    const hint = document.querySelector('.paint-hint');
+    if (hint) hint.textContent = 'Dublu-click pentru a colora un sector de râu. Shift + click pentru mai multe sectoare.';
+    const paintAll = document.querySelector('.btn-paint-all');
+    if (paintAll) paintAll.textContent = 'Colorează toate sectoarele';
+    return;
+  }
   if (warningKind() !== 'env') return;
   document.title = 'Avertizări de mediu — Administrare';
   const title = document.getElementById('admin-title');
@@ -175,7 +205,7 @@ function updateSendButton() {
 function addCodeBlock(preferredCode = null) {
   const container = document.getElementById('codes-container');
   const existing  = Array.from(container.querySelectorAll('.code-block'));
-  if (existing.length >= 3) { showNotice('Poți adăuga maximum 3 coduri'); return; }
+  if (existing.length >= (warningKind() === 'hydro' ? 4 : 3)) { showNotice('Poți adăuga maximum ' + (warningKind() === 'hydro' ? 4 : 3) + ' coduri'); return; }
 
   const usedCodes = existing.map(b => b.querySelector('select').value);
   let codeToAdd = preferredCode;
@@ -246,6 +276,19 @@ function setDistrictColor(layer, color) {
   const fullName = layer.feature.properties._name;
   const label    = layer.feature.properties._label;
 
+  if (warningKind() === 'hydro') {
+    if (!color) {
+      delete districtData[id];
+      if (hydroRiverLayer) hydroRiverLayer.resetStyle(layer);
+    } else {
+      layer.setStyle(hydroLineStyle(color));
+      districtData[id] = { name: fullName, label, color };
+      ensureCodeBlockForColor(color);
+    }
+    updateCount();
+    return;
+  }
+
   if (color === NORMAL_COLOR) {
     delete districtData[id];
     geojsonLayer.resetStyle(layer);
@@ -259,6 +302,12 @@ function setDistrictColor(layer, color) {
 }
 
 function paintDistrict(layer, toggle) {
+  if (warningKind() === 'hydro') {
+    const id = getId(layer.feature);
+    if (toggle && districtData[id]?.color === currentColor) setDistrictColor(layer, '');
+    else setDistrictColor(layer, currentColor);
+    return;
+  }
   if (currentColor === NORMAL_COLOR) { setDistrictColor(layer, NORMAL_COLOR); return; }
   const id = getId(layer.feature);
   if (toggle && districtData[id]?.color === currentColor) { setDistrictColor(layer, NORMAL_COLOR); return; }
@@ -305,6 +354,13 @@ function paintAllDistricts() {
     Object.keys(ENV_STATIONS).forEach(paintEnvStation);
     return;
   }
+  if (warningKind() === 'hydro') {
+    if (!hydroRiverLayer) return;
+    hydroRiverLayer.eachLayer(layer => {
+      setDistrictColor(layer, currentColor);
+    });
+    return;
+  }
   if (!geojsonLayer) return;
   geojsonLayer.eachLayer(l => setDistrictColor(l, currentColor));
   if (typeof geojsonLayer.redraw === 'function') geojsonLayer.redraw();
@@ -314,6 +370,11 @@ function resetMapColors() {
   Object.keys(districtData).forEach(k => delete districtData[k]);
   if (warningKind() === 'env') {
     Object.keys(envAdminMarkers).forEach(id => envAdminMarkers[id].setStyle(envMarkerOptions(NORMAL_COLOR)));
+    updateCount();
+    return;
+  }
+  if (warningKind() === 'hydro') {
+    if (hydroRiverLayer) hydroRiverLayer.eachLayer(layer => hydroRiverLayer.resetStyle(layer));
     updateCount();
     return;
   }
@@ -331,12 +392,13 @@ function clearPaintedColor(color) {
     updateCount();
     return;
   }
-  if (!geojsonLayer) return;
-  geojsonLayer.eachLayer(layer => {
+  const layerGroup = warningKind() === 'hydro' ? hydroRiverLayer : geojsonLayer;
+  if (!layerGroup) return;
+  layerGroup.eachLayer(layer => {
     const id = getId(layer.feature);
-    if (districtData[id]?.color === color) setDistrictColor(layer, NORMAL_COLOR);
+    if (districtData[id]?.color === color) setDistrictColor(layer, warningKind() === 'hydro' ? '' : NORMAL_COLOR);
   });
-  if (typeof geojsonLayer.redraw === 'function') geojsonLayer.redraw();
+  if (typeof layerGroup.redraw === 'function') layerGroup.redraw();
 }
 
 function updateCount() {
@@ -369,8 +431,10 @@ function initAdminMap() {
     .then(r => r.json())
     .then(data => {
       const envMap = warningKind() === 'env';
+      const hydroMap = warningKind() === 'hydro';
       if (envMap) addEnvCountryOutline(adminMap, data);
-      geojsonLayer = L.geoJSON(data, {
+      if (hydroMap) geojsonLayer = addHydroCountry(adminMap, data);
+      if (!hydroMap) geojsonLayer = L.geoJSON(data, {
         style: envMap
           ? { color: ENV_LAND_FILL, weight: 3, fillColor: ENV_LAND_FILL, fillOpacity: 1 }
           : { color: '#f2f7f7', weight: 1.2, fillColor: NORMAL_COLOR, fillOpacity: 0.85 },
@@ -418,6 +482,22 @@ function initAdminMap() {
         addEnvRoads(adminMap);
         addEnvAdminMarkers();
       }
+      if (hydroMap) {
+        loadHydroRivers(adminMap, {
+          onClick(line, event) {
+            if (event.originalEvent?.shiftKey) {
+              L.DomEvent.stop(event);
+              paintDistrict(line, false);
+            }
+          },
+          onDblClick(line, event) {
+            if (!event.originalEvent?.shiftKey) paintDistrict(line, true);
+          },
+        }).then(layer => {
+          hydroRiverLayer = layer;
+          refreshMapSize();
+        }).catch(err => console.error(err));
+      }
       setTimeout(refreshMapSize, 50);
     })
     .catch(err => { showNotice('Nu s-a putut încărca harta.'); console.error(err); });
@@ -430,7 +510,9 @@ function validatePaintedCodes(codes) {
   if (!districts.length || !districts.some(d => codeColorSet.includes(d.color))) {
     showNotice(warningKind() === 'env'
       ? 'Colorează cel puțin un cerc cu culoarea codului selectat'
-      : 'Colorează cel puțin un raion cu culoarea codului selectat');
+      : warningKind() === 'hydro'
+        ? 'Colorează cel puțin un sector de râu cu culoarea codului selectat'
+        : 'Colorează cel puțin un raion cu culoarea codului selectat');
     return false;
   }
   return true;
@@ -555,7 +637,7 @@ async function startAdmin() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  const authed = await checkAuth(warningKind() === 'env' ? 'env' : 'meteo');
+  const authed = await checkAuth(warningKind());
   if (!authed) {
     const next = encodeURIComponent(adminBase());
     window.location.replace('/login?next=' + next);
@@ -563,7 +645,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   if (adminSessionKind !== 'full') {
     document.querySelectorAll('.kind-tabs a').forEach(link => {
-      link.hidden = link.dataset.kindTab !== (warningKind() === 'env' ? 'env' : 'meteo');
+      link.hidden = link.dataset.kindTab !== warningKind();
     });
   }
   startAdmin();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Autentificare — Administrare</title>
-  <link rel="stylesheet" href="/css/style.css?v=20261012envlogin" />
+  <link rel="stylesheet" href="/css/style.css?v=20261015purple" />
   <!-- Tailwind must load before tailwind.config -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { corePlugins: { preflight: false } };</script>
@@ -13,6 +13,9 @@
   <script>
     if (new URLSearchParams(location.search).get('next') === '/admin/environmental') {
       document.body.classList.add('kind-env');
+    }
+    if (new URLSearchParams(location.search).get('next') === '/admin/hydro') {
+      document.body.classList.add('kind-hydro');
     }
   </script>
   <section id="login-view" class="active">
@@ -34,10 +37,22 @@
 
   <script>
     const next = new URLSearchParams(location.search).get('next');
-    const LOGIN_KIND = next === '/admin/environmental' ? 'env' : (next === '/admin/full' ? 'full' : 'meteo');
-    const EDITOR_URL = LOGIN_KIND === 'env' ? '/admin/environmental' : '/admin';
+    const LOGIN_KIND = next === '/admin/environmental'
+      ? 'env'
+      : next === '/admin/hydro'
+        ? 'hydro'
+        : next === '/admin/full'
+          ? 'full'
+          : 'meteo';
+    const EDITOR_URL = LOGIN_KIND === 'env'
+      ? '/admin/environmental'
+      : LOGIN_KIND === 'hydro'
+        ? '/admin/hydro'
+        : '/admin';
     if (LOGIN_KIND === 'env') {
       document.getElementById('login-subtitle').textContent = 'Avertizări de mediu';
+    } else if (LOGIN_KIND === 'hydro') {
+      document.getElementById('login-subtitle').textContent = 'Avertizări hidrologice';
     } else if (LOGIN_KIND === 'full') {
       document.getElementById('login-subtitle').textContent = 'Administrare completă';
     }

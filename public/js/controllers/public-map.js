@@ -11,7 +11,9 @@ const IS_MAP_WIDGET           = document.documentElement.classList.contains('map
 const IS_EMBED                = document.documentElement.classList.contains('embed');
 const WIDGET_DEFAULT_REDIRECT = warningKind() === 'env'
   ? 'https://www.meteo.md/index.php/ro/environmental/current-warnings'
-  : 'https://www.meteo.md/index.php/ro/weather/current-warnings';
+  : warningKind() === 'hydro'
+    ? '/hydro'
+    : 'https://www.meteo.md/index.php/ro/weather/current-warnings';
 
 function widgetRedirectUrl() {
   try {
@@ -34,6 +36,7 @@ function goFromWidget() {
 
 let publicMap          = null;
 let publicGeojsonLayer = null;
+let publicHydroLayer   = null;
 let districtWarnings   = {};
 let selectedWarningIndex = null;
 let cachedWarnings     = [];
@@ -82,7 +85,7 @@ function warningCardHtml(item, index, isSelected) {
   return `
     <article class="mb-3 cursor-pointer rounded-xl border p-4 outline-none transition hover:border-brand-200 hover:bg-white ${cls}"
              data-warning="${index}" onclick="selectWarning(${index})">
-      <h3 class="text-base font-bold text-brand-700">${escapeHtmlPublic(item.phenomenon||(warningKind()==='env'?'Avertizare de mediu':'Avertizare meteorologică'))}</h3>
+      <h3 class="text-base font-bold text-brand-700">${escapeHtmlPublic(item.phenomenon||(warningKind()==='env'?'Avertizare de mediu':warningKind()==='hydro'?'Avertizare hidrologică':'Avertizare meteorologică'))}</h3>
       <p class="mt-1 text-[11px] text-slate-500">${escapeHtmlPublic(formatInterval(item)||formatDateTime(item.emitDate))}</p>
       ${codesHtml(item.codes)}
     </article>`;
@@ -426,7 +429,8 @@ function downloadMapScreenshot() {
 
   const link = document.createElement('a');
   const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-  link.download = `${warningKind() === 'env' ? 'harta-mediu' : 'harta-meteo'}-${stamp}.png`;
+  const mapFile = warningKind() === 'env' ? 'harta-mediu' : warningKind() === 'hydro' ? 'harta-hidro' : 'harta-meteo';
+  link.download = `${mapFile}-${stamp}.png`;
   link.href = canvas.toDataURL('image/png');
   link.click();
 }
@@ -581,9 +585,27 @@ function addEnvPublicMarkers() {
   });
 }
 
+function applyHydroLineColors(data) {
+  if (!publicHydroLayer) return;
+  const colors = stationColors(data);
+  publicHydroLayer.eachLayer(layer => {
+    const name = layer.feature.properties.name || layer.feature.properties._label;
+    const match = colors[name] || colors[layer.feature.properties._label];
+    layer.setStyle(hydroLineStyle(match ? match.color : ''));
+    layer._warningIndex = match ? match.warningIndex : null;
+  });
+  renderPhenomenaPanel(data);
+  renderPopupToggleButton(data.length);
+  updateDownloadMapButton(data.length);
+}
+
 function applyMapColors(data) {
   if (warningKind() === 'env') {
     applyEnvCircleColors(data);
+    return;
+  }
+  if (warningKind() === 'hydro') {
+    applyHydroLineColors(data);
     return;
   }
   if (!publicGeojsonLayer) return;
@@ -614,8 +636,22 @@ function initPublicMap() {
     .then(r => r.json())
     .then(geo => {
       const envMap = warningKind() === 'env';
+      const hydroMap = warningKind() === 'hydro';
       if (envMap) addEnvCountryOutline(publicMap, geo);
-      publicGeojsonLayer = L.geoJSON(geo, {
+      if (hydroMap) {
+        publicGeojsonLayer = addHydroCountry(publicMap, geo);
+        loadHydroRivers(publicMap, {
+          widget: IS_MAP_WIDGET,
+          onClick(line) {
+            if (IS_MAP_WIDGET) { goFromWidget(); return; }
+            if (line._warningIndex != null) selectWarning(line._warningIndex);
+          },
+        }).then(layer => {
+          publicHydroLayer = layer;
+          refreshData();
+        }).catch(err => console.error('Hydro map load error:', err));
+      }
+      publicGeojsonLayer = hydroMap ? publicGeojsonLayer : L.geoJSON(geo, {
         style: envMap
           ? { color: ENV_LAND_FILL, weight: 3, fillColor: ENV_LAND_FILL, fillOpacity: 1 }
           : { color: '#ffffff', weight: 1.3, fillColor: PUBLIC_MAP_NORMAL_COLOR, fillOpacity: 0.9 },
@@ -660,12 +696,13 @@ function initPublicMap() {
           return { paddingTopLeft: [4, 4], paddingBottomRight: [4, 4] };
         }
         const wide = window.matchMedia('(min-width: 901px)').matches;
+        const topPad = warningKind() === 'hydro' ? 18 : 12;
         if (!wide) return { paddingTopLeft: [8, 8], paddingBottomRight: [8, 8] };
         const panel = document.querySelector('.info-panel');
         const right = panel && window.getComputedStyle(panel).position === 'absolute'
           ? Math.min(panel.offsetWidth + 16, elWidthSafe())
           : 12;
-        return { paddingTopLeft: [4, 12], paddingBottomRight: [right, 12] };
+        return { paddingTopLeft: [8, topPad], paddingBottomRight: [right, 16] };
       }
       function elWidthSafe() {
         const el = publicMap.getContainer();
@@ -737,6 +774,30 @@ function applyPublicKindChrome() {
   const homeLink = document.querySelector('[data-home-link]');
   if (homeLink) homeLink.setAttribute('href', '/home?kind=' + warningKind());
   renderPopupToggleButton(0);
+  const note = document.getElementById('hydro-note');
+  if (note) note.hidden = warningKind() !== 'hydro';
+  if (warningKind() === 'hydro') {
+    const legend = document.getElementById('legend-list');
+    if (legend) {
+      legend.innerHTML = [
+        ['#2E6CB5', 'râu monitorizat'],
+        ['#28D762', 'cod verde'],
+        ['#FFED00', 'cod galben'],
+        ['#FF8A00', 'cod portocaliu'],
+        ['#FF0000', 'cod roșu'],
+      ].map(([color, label]) => `<li class="flex items-center gap-3"><span class="legend-dot" style="background:${color}"></span> ${label}</li>`).join('');
+    }
+    document.title = 'Avertizări hidrologice — Moldova';
+    const crumb = document.getElementById('crumb-current');
+    if (crumb) crumb.textContent = 'Avertizări hidrologice';
+    const heading = document.getElementById('page-heading');
+    if (heading) heading.textContent = 'AVERTIZĂRI HIDROLOGICE';
+    const popupTitle = document.getElementById('popup-title');
+    if (popupTitle) popupTitle.textContent = 'Avertizare hidrologică';
+    const adminLink = document.querySelector('a[href="/login"]');
+    if (adminLink) adminLink.setAttribute('href', '/login?next=' + encodeURIComponent('/admin/hydro'));
+    return;
+  }
   if (warningKind() !== 'env') return;
   document.title = 'Avertizări de mediu — Moldova';
   const crumb = document.getElementById('crumb-current');

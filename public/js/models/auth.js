@@ -22,7 +22,11 @@ async function checkAuth(expectedKind) {
 async function handleLogout() {
   const next = adminSessionKind === 'full'
     ? '/admin/full'
-    : (location.pathname.startsWith('/admin/environmental') ? '/admin/environmental' : '/admin');
+    : (location.pathname.startsWith('/admin/environmental')
+      ? '/admin/environmental'
+      : location.pathname.startsWith('/admin/hydro')
+        ? '/admin/hydro'
+        : '/admin');
   await fetch('/api/logout', { method: 'POST' });
   window.location.href = '/login?next=' + encodeURIComponent(next);
 }

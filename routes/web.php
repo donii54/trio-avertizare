@@ -15,7 +15,12 @@ Route::get('/', fn () => $servePublic('index.html'));
 Route::get('/environmental/widget', fn () => $servePublic('widget.html'));
 Route::get('/environmental', fn () => $servePublic('index.html'));
 
+// Hydrological warnings — river sectors from the CorelDRAW template.
+Route::get('/hydro/widget', fn () => $servePublic('widget.html'));
+Route::get('/hydro', fn () => $servePublic('index.html'));
+
 // Editor home for people who add warnings. Public maps stay unchanged.
+Route::get('/editor/hydro', fn () => $servePublic('editor.html'));
 Route::get('/editor/environmental', fn () => $servePublic('editor.html'));
 Route::get('/editor', fn () => $servePublic('editor.html'));
 
@@ -32,6 +37,9 @@ Route::get('/login', function () {
 });
 
 // Warning editor (and saved-warning list). Guests are redirected to /login.
+Route::get('/admin/hydro', fn () => $servePublic('admin.html'))
+    ->middleware(RequireAdminSession::class.':hydro');
+
 Route::get('/admin/environmental', fn () => $servePublic('admin.html'))
     ->middleware(RequireAdminSession::class.':env');
 

@@ -16,6 +16,8 @@ class AdminUserSeeder extends Seeder
         $envPassword = env('ENV_ADMIN_PASSWORD', 'mediu');
         $fullUser = env('FULL_ADMIN_USER', 'full');
         $fullPassword = env('FULL_ADMIN_PASSWORD', 'full');
+        $hydroUser = env('HYDRO_ADMIN_USER', 'hidro');
+        $hydroPassword = env('HYDRO_ADMIN_PASSWORD', 'hidro');
 
         AdminUser::updateOrCreate(
             ['username' => $meteoUser],
@@ -29,7 +31,11 @@ class AdminUserSeeder extends Seeder
             ['username' => $fullUser],
             ['password' => Hash::make($fullPassword), 'kind' => 'full']
         );
+        AdminUser::updateOrCreate(
+            ['username' => $hydroUser],
+            ['password' => Hash::make($hydroPassword), 'kind' => 'hydro']
+        );
 
-        $this->command->info("Admins seeded: meteo '{$meteoUser}', environment '{$envUser}', full '{$fullUser}'.");
+        $this->command->info("Admins seeded: meteo '{$meteoUser}', environment '{$envUser}', hydro '{$hydroUser}', full '{$fullUser}'.");
     }
 }

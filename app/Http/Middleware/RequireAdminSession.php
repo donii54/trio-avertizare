@@ -30,7 +30,11 @@ class RequireAdminSession
             return response()->json(['ok' => false, 'error' => $error], $status);
         }
 
-        $next = $request->is('admin/environmental') ? '/admin/environmental' : '/admin';
+        $next = match (true) {
+            $request->is('admin/environmental') => '/admin/environmental',
+            $request->is('admin/hydro') => '/admin/hydro',
+            default => '/admin',
+        };
 
         return redirect('/login?next='.$next);
     }
