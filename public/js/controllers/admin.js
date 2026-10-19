@@ -277,11 +277,14 @@ function setDistrictColor(layer, color) {
   const label    = layer.feature.properties._label;
 
   if (warningKind() === 'hydro') {
+    if (layer.feature.properties && layer.feature.properties.paintable === false) return;
     if (!color) {
       delete districtData[id];
       if (hydroRiverLayer) hydroRiverLayer.resetStyle(layer);
+      hydroPlaceLine(layer, false);
     } else {
       layer.setStyle(hydroLineStyle(color));
+      hydroPlaceLine(layer, true);
       districtData[id] = { name: fullName, label, color };
       ensureCodeBlockForColor(color);
     }
@@ -374,7 +377,12 @@ function resetMapColors() {
     return;
   }
   if (warningKind() === 'hydro') {
-    if (hydroRiverLayer) hydroRiverLayer.eachLayer(layer => hydroRiverLayer.resetStyle(layer));
+    if (hydroRiverLayer) {
+      hydroRiverLayer.eachLayer(layer => {
+        hydroRiverLayer.resetStyle(layer);
+        hydroPlaceLine(layer, false);
+      });
+    }
     updateCount();
     return;
   }

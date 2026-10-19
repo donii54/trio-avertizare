@@ -22,6 +22,10 @@ function hydroLineStyle(color) {
   };
 }
 
+function hydroCanPaint(feature) {
+  return !(feature.properties && feature.properties.paintable === false);
+}
+
 function hydroFeatureStyle(feature, color) {
   return hydroLineStyle(color || '');
 }
@@ -53,17 +57,23 @@ function addHydroCountry(map, geo) {
 
 function loadHydroRivers(map, options) {
   options = options || {};
-  if (!map.getPane('hydroRivers')) {
-    const pane = map.createPane('hydroRivers');
-    pane.style.zIndex = 460;
+  if (!map.getPane('hydroLines')) {
+    map.createPane('hydroLines').style.zIndex = 450;
   }
-  return fetch('/data/md-hydro.geojson?v=20261015east')
+  if (!map.getPane('hydroRivers')) {
+    map.createPane('hydroRivers').style.zIndex = 470;
+  }
+  return fetch('/data/md-hydro.geojson?v=20261019s19')
     .then(response => response.json())
     .then(geo => L.geoJSON(geo, {
-      pane: 'hydroRivers',
       smoothFactor: 0.35,
       style: feature => hydroFeatureStyle(feature, ''),
       onEachFeature(feature, line) {
+        line.options.pane = hydroCanPaint(feature) ? 'hydroRivers' : 'hydroLines';
+        if (!hydroCanPaint(feature)) {
+          line.options.interactive = false;
+          return;
+        }
         const label = feature.properties.name || feature.properties.shapeName || '';
         feature.properties._name = label;
         feature.properties._label = label;
@@ -80,4 +90,10 @@ function loadHydroRivers(map, options) {
         });
       },
     }).addTo(map));
+}
+
+function hydroPlaceLine(layer, painted) {
+  if (!layer._map || !hydroCanPaint(layer.feature)) return;
+  if (painted) layer.bringToFront();
+  else layer.bringToBack();
 }

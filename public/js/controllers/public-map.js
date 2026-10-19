@@ -589,9 +589,11 @@ function applyHydroLineColors(data) {
   if (!publicHydroLayer) return;
   const colors = stationColors(data);
   publicHydroLayer.eachLayer(layer => {
+    if (layer.feature.properties && layer.feature.properties.paintable === false) return;
     const name = layer.feature.properties.name || layer.feature.properties._label;
     const match = colors[name] || colors[layer.feature.properties._label];
     layer.setStyle(hydroLineStyle(match ? match.color : ''));
+    hydroPlaceLine(layer, !!match);
     layer._warningIndex = match ? match.warningIndex : null;
   });
   renderPhenomenaPanel(data);
