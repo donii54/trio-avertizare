@@ -962,6 +962,7 @@ body.kind-env #calendar-days button[data-state="future"]:hover {
     align-items: flex-start;
     gap: 10px;
   }
+}
 
 body.kind-hydro {
   background: #f6f3fc;
@@ -1114,4 +1115,3 @@ body.kind-hydro .btn-send:disabled,
 body.kind-hydro .btn-send:disabled:hover { background: #c4a8e6; }
 body.kind-hydro .info { background: #f3eefb; }
 body.kind-hydro .color-label { color: #6b3fa0; }
-}
