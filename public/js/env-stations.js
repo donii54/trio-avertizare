@@ -2,8 +2,8 @@
  * Air-quality stations. The base map matches the meteorological warnings.
  * Only these circles change color: green by default, then yellow, orange, red.
  */
-const ENV_LAND_FILL = '#D8F3E4';
-const ENV_LAND_EDGE = '#6FCB96';
+const ENV_LAND_FILL = '#E7F2F6';
+const ENV_LAND_EDGE = '#7BA3D4';
 
 function addEnvCountryOutline(map, geo) {
   L.geoJSON(geo, {

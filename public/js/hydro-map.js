@@ -3,8 +3,8 @@
  * River sectors come from the CorelDRAW template (monitored reaches).
  */
 const HYDRO_RIVER_COLOR = '#2E6CB5';
-const HYDRO_LAND_FILL = '#FBF9FD';
-const HYDRO_LAND_EDGE = '#C4B3D6';
+const HYDRO_LAND_FILL = '#F8FBFF';
+const HYDRO_LAND_EDGE = '#7BA3D4';
 const HYDRO_NOTE = 'Notă: Pe hartă sunt menționate doar râurile care sunt monitorizate de către AMM';
 
 const HYDRO_PHENOMENA = [
@@ -42,7 +42,7 @@ function addHydroCountry(map, geo) {
         interactive: false,
         style: {
           stroke: true,
-          color: '#C4B3D6',
+          color: HYDRO_LAND_EDGE,
           weight: 1.6,
           opacity: 1,
           fill: true,
