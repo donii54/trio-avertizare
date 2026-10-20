@@ -110,9 +110,7 @@ function renderCodeBlock(codeToAdd) {
     <div class="code-header">
       <div class="code-dot" style="background:${CODE_COLORS[codeToAdd]}"></div>
       <select class="code-select" onchange="onCodeChange(this)">
-        <option value="COD GALBEN">COD GALBEN</option>
-        <option value="COD PORTOCALIU">COD PORTOCALIU</option>
-        <option value="COD ROȘU">COD ROȘU</option>
+        ${CODE_ORDER.map(code => `<option value="${code}">${code}</option>`).join('')}
       </select>
       <button onclick="removeCodeBlock(this)" class="code-remove">x</button>
     </div>
@@ -126,7 +124,8 @@ function updateAddButton() {
   const count = document.querySelectorAll('.code-block').length;
   const btn   = document.querySelector('.btn-add');
   if (!btn) return;
-  btn.disabled      = count >= 3;
-  btn.style.opacity = count >= 3 ? '0.5' : '1';
-  btn.style.cursor  = count >= 3 ? 'not-allowed' : 'pointer';
+  const limited = warningKind() !== 'hydro' && count >= 3;
+  btn.disabled      = limited;
+  btn.style.opacity = limited ? '0.5' : '1';
+  btn.style.cursor  = limited ? 'not-allowed' : 'pointer';
 }

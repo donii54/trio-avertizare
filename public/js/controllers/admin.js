@@ -205,13 +205,17 @@ function updateSendButton() {
 function addCodeBlock(preferredCode = null) {
   const container = document.getElementById('codes-container');
   const existing  = Array.from(container.querySelectorAll('.code-block'));
-  if (existing.length >= (warningKind() === 'hydro' ? 4 : 3)) { showNotice('Poți adăuga maximum ' + (warningKind() === 'hydro' ? 4 : 3) + ' coduri'); return; }
+  if (warningKind() !== 'hydro' && existing.length >= 3) {
+    showNotice('Poți adăuga maximum 3 coduri');
+    return;
+  }
 
   const usedCodes = existing.map(b => b.querySelector('select').value);
   let codeToAdd = preferredCode;
   if (!codeToAdd || usedCodes.includes(codeToAdd) || !CODE_ORDER.includes(codeToAdd)) {
     codeToAdd = CODE_ORDER.find(c => !usedCodes.includes(c));
   }
+  if (!codeToAdd && warningKind() === 'hydro') codeToAdd = CODE_ORDER[0];
   if (!codeToAdd) { showNotice('Toate codurile au fost deja adăugate'); return; }
 
   container.appendChild(renderCodeBlock(codeToAdd));
@@ -227,7 +231,7 @@ function onCodeChange(select) {
     .filter(b => b !== block)
     .some(b => b.querySelector('select').value === newCode);
 
-  if (alreadyUsed) { showNotice('Acest cod este deja folosit'); select.value = block.dataset.code; return; }
+  if (alreadyUsed && warningKind() !== 'hydro') { showNotice('Acest cod este deja folosit'); select.value = block.dataset.code; return; }
   block.dataset.code = newCode;
   block.classList.remove('yellow', 'orange', 'red', 'green');
   block.classList.add(codeBorderClass(newCode));
@@ -280,10 +284,10 @@ function setDistrictColor(layer, color) {
     if (layer.feature.properties && layer.feature.properties.paintable === false) return;
     if (!color) {
       delete districtData[id];
-      if (hydroRiverLayer) hydroRiverLayer.resetStyle(layer);
+      hydroApplyStyle(layer, '');
       hydroPlaceLine(layer, false);
     } else {
-      layer.setStyle(hydroLineStyle(color));
+      hydroApplyStyle(layer, color);
       hydroPlaceLine(layer, true);
       districtData[id] = { name: fullName, label, color };
       ensureCodeBlockForColor(color);
@@ -379,7 +383,7 @@ function resetMapColors() {
   if (warningKind() === 'hydro') {
     if (hydroRiverLayer) {
       hydroRiverLayer.eachLayer(layer => {
-        hydroRiverLayer.resetStyle(layer);
+        hydroApplyStyle(layer, '');
         hydroPlaceLine(layer, false);
       });
     }
