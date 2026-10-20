@@ -8,7 +8,7 @@ const HYDRO_LAND_FILL = '#F8FBFF';
 const HYDRO_LAND_EDGE = '#7BA3D4';
 const HYDRO_NOTE = 'Notă: Pe hartă sunt menționate doar râurile care sunt monitorizate de către AMM';
 const HYDRO_SMOOTH = 0.85;
-const HYDRO_PAINT_OPACITY = 0.95;
+const HYDRO_PAINT_OPACITY = 1;
 
 const HYDRO_PHENOMENA = [
   'Avertizare hidrologică',
@@ -25,7 +25,7 @@ function hydroLineStyle(color, feature, kind) {
   if (kind === 'casing') {
     return {
       color: active ? color : HYDRO_RIVER_CASING,
-      weight: active ? (main ? 8 : 6.2) : (main ? 3.5 : 2.4),
+      weight: active ? (main ? 9.5 : 7.4) : (main ? 3.5 : 2.4),
       opacity: active ? HYDRO_PAINT_OPACITY : 1,
       lineCap: 'round',
       lineJoin: 'round',
@@ -33,7 +33,7 @@ function hydroLineStyle(color, feature, kind) {
   }
   return {
     color: HYDRO_RIVER_COLOR,
-    weight: main ? 2.15 : 1.35,
+    weight: active ? (main ? 1.35 : 0.9) : (main ? 1.8 : 1.15),
     opacity: 1,
     lineCap: 'round',
     lineJoin: 'round',
@@ -92,7 +92,7 @@ function loadHydroRivers(map, options) {
   if (!map.getPane('hydroRivers')) {
     map.createPane('hydroRivers').style.zIndex = 470;
   }
-  return fetch('/data/md-hydro.geojson?v=20261019s19')
+  return fetch('/data/md-hydro.geojson?v=20261020del72')
     .then(response => response.json())
     .then(geo => {
       const casingGroup = L.geoJSON(geo, {
